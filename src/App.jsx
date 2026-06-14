@@ -68,7 +68,7 @@ function getTodayKey() {
 // ─── PUZZLES ─────────────────────────────────────────────────────────────────
 const PUZZLES = [
   { level: 1, words: [ {id:0,word:"BLANKET",row:0,col:0,direction:"across"},{id:1,word:"GUST",row:3,col:0,direction:"across"},{id:2,word:"TIER",row:5,col:0,direction:"across"},{id:3,word:"BLIGHT",row:0,col:0,direction:"down"},{id:4,word:"NATTER",row:0,col:3,direction:"down"} ] },
-  { level: 2, words: [ {id:0,word:"CHAPTER",row:0,col:0,direction:"across"},{id:1,word:"NOVA",row:3,col:0,direction:"across"},{id:2,word:"GILL",row:5,col:0,direction:"across"},{id:3,word:"CRINGE",row:0,col:0,direction:"down"},{id:4,word:"PETAL",row:0,col:3,direction:"down"} ] },
+  { level: 2, words: [ {id:0,word:"CHAPTER",row:0,col:0,direction:"across"},{id:1,word:"NOVA",row:3,col:0,direction:"across"},{id:2,word:"EVIL",row:5,col:0,direction:"across"},{id:3,word:"CRINGE",row:0,col:0,direction:"down"},{id:4,word:"PETAL",row:0,col:3,direction:"down"} ] },
   { level: 3, words: [ {id:0,word:"WHISPER",row:0,col:0,direction:"across"},{id:1,word:"BETA",row:3,col:0,direction:"across"},{id:2,word:"TALL",row:5,col:0,direction:"across"},{id:3,word:"WOMBAT",row:0,col:0,direction:"down"},{id:4,word:"SCRAWL",row:0,col:3,direction:"down"} ] },
   { level: 4, words: [ {id:0,word:"JOURNEY",row:0,col:0,direction:"across"},{id:1,word:"SNAP",row:3,col:0,direction:"across"},{id:2,word:"WIDE",row:5,col:0,direction:"across"},{id:3,word:"JIGSAW",row:0,col:0,direction:"down"},{id:4,word:"RIPPLE",row:0,col:3,direction:"down"} ] },
   { level: 5, words: [ {id:0,word:"COMPLEX",row:0,col:0,direction:"across"},{id:1,word:"WORN",row:3,col:0,direction:"across"},{id:2,word:"BASH",row:5,col:0,direction:"across"},{id:3,word:"COBWEB",row:0,col:0,direction:"down"},{id:4,word:"PLINTH",row:0,col:3,direction:"down"} ] },
@@ -1487,11 +1487,17 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                     flex:1,background:C.card,border:`1px solid ${C.border}`,
                     borderRadius:10,color:C.text,padding:"12px",fontSize:14,fontWeight:"bold",
                   }}>Share 📤</button>
-                  <button onClick={()=>{ if(!isDaily && onNext) onNext(); onBack(); }} style={{
-                    flex:1,background:C.text,border:"none",
-                    borderRadius:10,color:C.bg,padding:"12px",fontSize:14,fontWeight:"bold",
-                  }}>{isDaily?"Home 🏠":"Next →"}</button>
+                  <button onClick={onBack} style={{
+                    flex:1,background:C.card,border:`1px solid ${C.border}`,
+                    borderRadius:10,color:C.text,padding:"12px",fontSize:14,fontWeight:"bold",
+                  }}>{isDaily?"Home 🏠":"Home"}</button>
                 </div>
+                {!isDaily && (
+                  <button onClick={()=>{ onNext(); }} style={{
+                    marginTop:10,width:"100%",background:C.text,border:"none",
+                    borderRadius:10,color:C.bg,padding:"14px",fontSize:15,fontWeight:"bold",
+                  }}>Next Level →</button>
+                )}
               </>
             ):(
               <>
@@ -1555,13 +1561,16 @@ export default function Crosswords() {
     // Just persist so if they leave and come back we do not lose progress
   }
 
-  function handleResetProgress() {
-    setCurrentLevel(1);
-    localStorage.setItem("cw_level","1");
-  }
+  function handleNextLevel() {
     const next = Math.min(currentLevel+1,250);
     setCurrentLevel(next);
     localStorage.setItem("cw_level",String(next));
+    // Stay on game screen — Game component will re-render with new puzzle via key prop
+  }
+
+  function handleResetProgress() {
+    setCurrentLevel(1);
+    localStorage.setItem("cw_level","1");
   }
 
   if (!username) return <UsernameScreen onSet={handleUsernameSet}/>;
@@ -1588,6 +1597,7 @@ export default function Crosswords() {
     const puzzle = PUZZLES[currentLevel-1];
     return (
       <Game
+        key={currentLevel}
         username={username}
         puzzle={puzzle}
         mode="regular"

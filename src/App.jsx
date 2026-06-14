@@ -1025,7 +1025,7 @@ function HowToPlay({ onClose }) {
           width:"100%",background:C.text,border:"none",borderRadius:10,
           color:C.bg,padding:"14px",fontSize:15,fontWeight:"bold",
           cursor:"pointer",fontFamily:"Georgia,serif",
-        }}>Got it — Let&#39;s Play!</button>
+        }}>Got it — Play Now!</button>
       </div>
     </div>
   );
@@ -1119,7 +1119,7 @@ function UsernameScreen({ onSet }) {
           width:"100%",background:checking?C.accentLt:C.text,border:"none",borderRadius:10,
           color:checking?C.textMid:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
           cursor:checking?"default":"pointer",fontFamily:"Georgia,serif",marginBottom:10,
-        }}>{checking?"Checking...":"Let&#39;s Play →"}</button>
+        }}>{checking ? "Checking..." : "Play Now \u2192"}</button>
         <button onClick={()=>setShowHow(true)} style={{
           width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:10,
           color:C.textMid,padding:"11px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",

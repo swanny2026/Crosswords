@@ -883,21 +883,26 @@ function Leaderboard({ onClose }) {
   // Aggregate per user
   const userMap = {};
   (scores||[]).forEach(s=>{
-    if (!userMap[s.username]) userMap[s.username]={username:s.username,streak:0,totalScore:0,count:0,maxLevel:0,dailyDays:new Set()};
+    if (!userMap[s.username]) userMap[s.username]={username:s.username,streak:0,totalScore:0,count:0,grades:[]};
     const u=userMap[s.username];
-    if (s.mode==="daily") u.dailyDays.add(s.created_at?.slice(0,10));
     u.totalScore += (s.score||0);
     u.count++;
-    if (s.level>u.maxLevel) u.maxLevel=s.level;
+    u.grades.push(s.score||0);
     if (s.streak>u.streak) u.streak=s.streak;
   });
 
-  const users = Object.values(userMap);
+  const users = Object.values(userMap).map(u=>({
+    ...u,
+    avgScore: u.grades.length ? Math.round(u.grades.reduce((a,b)=>a+b,0)/u.grades.length) : 0,
+    avgGrade: (avg => avg>=90?"A":avg>=75?"B":avg>=60?"C":avg>=45?"D":avg>=25?"E":"F")(
+      u.grades.length ? Math.round(u.grades.reduce((a,b)=>a+b,0)/u.grades.length) : 0
+    ),
+  }));
 
   const sorted = [...users].sort((a,b)=>{
-    if (tab==="streak") return b.streak-a.streak;
-    if (tab==="points") return b.totalScore-a.totalScore;
-    return b.maxLevel-a.maxLevel;
+    if (tab==="streak") return b.streak-a.streak || b.count-a.count;
+    if (tab==="points") return b.totalScore-a.totalScore || b.count-a.count;
+    return b.avgScore-a.avgScore || b.count-a.count;
   });
 
   const medalColor = i=>i===0?"#c9a227":i===1?"#9a9a9a":i===2?"#8a5a2a":C.accentLt;
@@ -916,7 +921,7 @@ function Leaderboard({ onClose }) {
 
         {/* Tabs */}
         <div style={{display:"flex",gap:6,marginBottom:16}}>
-          {[["streak","🔥 Streak"],["points","⭐ Points"],["level","📖 Level"]].map(([key,label])=>(
+          {[["streak","🔥 Streak"],["points","⭐ Points"],["grade","🎓 Avg Grade"]].map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)} style={{
               flex:1,padding:"9px 4px",borderRadius:8,fontSize:12,fontWeight:"bold",
               background:tab===key?C.text:C.card,
@@ -949,10 +954,10 @@ function Leaderboard({ onClose }) {
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>
                   <div style={{fontWeight:"bold",fontSize:18,color:C.text}}>
-                    {tab==="streak"?`${u.streak}🔥`:tab==="points"?u.totalScore:`Lvl ${u.maxLevel}`}
+                    {tab==="streak"?`${u.streak}🔥`:tab==="points"?u.totalScore:`${u.avgGrade} (${u.avgScore})`}
                   </div>
                   <div style={{fontSize:10,color:C.textLight}}>
-                    {tab==="streak"?"days":tab==="points"?"total pts":"highest"}
+                    {tab==="streak"?"days":tab==="points"?"total pts":"avg grade"}
                   </div>
                 </div>
               </div>

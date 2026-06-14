@@ -1248,6 +1248,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
 
   const [revealed,       setRevealed]       = useState(new Set());
   const [guessedWords,   setGuessedWords]   = useState(new Set());
+  const isDaily=mode==="daily";
   const startingLetters = isDaily ? 5 : level <= 50 ? 6 : level <= 175 ? 5 : 4;
   const [letterLeft,     setLetterLeft]     = useState(startingLetters);
   const [seconds,        setSeconds]        = useState(0);
@@ -1261,6 +1262,8 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
   const [confetti,       setConfetti]       = useState(false);
   const [showShare,      setShowShare]      = useState(false);
   const [result,         setResult]         = useState(null);
+  const [isPerfect,      setIsPerfect]      = useState(true); // no wrong guesses yet
+  const [hintUsed,       setHintUsed]       = useState(false);
 
   useEffect(()=>{
     if (gameState!=="playing") return;
@@ -1296,7 +1299,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
     setGameState("won");
     const score=calcScore(seconds);
     const grade=getGrade(score);
-    const res={score,grade,seconds};
+    const res={score,grade,seconds,perfect:isPerfect&&!hintUsed};
     setResult(res);
     // Submit to Supabase
     submitScore({username,mode,level,seconds,score,grade,streak,created_at:new Date().toISOString()});
@@ -1334,6 +1337,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
       }
     } else {
       setWrongLetters(prev=>new Set([...prev,letter]));
+      setIsPerfect(false);
       setLetterLeft(prev=>{
         const next=prev-1;
         if (next<=0){ setGameState("lost"); showToast("Out of guesses — try again!","bad"); }
@@ -1345,7 +1349,6 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
 
   const fmt=s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   const CELL=54,GAP=5;
-  const isDaily=mode==="daily";
 
   return (
     <div style={{minHeight:"100vh",background:C.bg,fontFamily:"Georgia,serif",color:C.text}}>
@@ -1493,7 +1496,42 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
           </div>
         )}
 
-        {/* End screen */}
+        {/* Hint button — appears when down to last guess */}
+        {gameState==="playing" && letterLeft===1 && !hintUsed && (
+          <div style={{textAlign:"center",marginTop:8}}>
+            <button onClick={()=>{
+              // Reveal one random unrevealed letter
+              const unrevealed = Object.entries(cellMap)
+                .filter(([k])=>!revealed.has(k))
+                .map(([,v])=>v.letter);
+              if (!unrevealed.length) return;
+              const uniqueUnrevealed = [...new Set(unrevealed)];
+              const hintLetter = uniqueUnrevealed[Math.floor(Math.random()*uniqueUnrevealed.length)];
+              const hits = Object.entries(cellMap).filter(([,v])=>v.letter===hintLetter).map(([k])=>k);
+              const newRevealed = new Set(revealed);
+              hits.forEach(k=>newRevealed.add(k));
+              setRevealed(newRevealed);
+              pulseKeys(hits);
+              setCorrectLetters(prev=>new Set([...prev,hintLetter]));
+              setHintUsed(true);
+              setIsPerfect(false);
+              const completed = checkCompletedWords(newRevealed, guessedWords);
+              if (completed.length>0) {
+                const newGuessed = new Set([...guessedWords,...completed.map(w=>w.id)]);
+                setGuessedWords(newGuessed);
+                const bonus = completed.length*2;
+                setLetterLeft(n=>n+bonus);
+                setTimeout(()=>checkWin(newGuessed),500);
+              } else {
+                showBurst("💡",`${hintLetter} revealed!`,"Free hint used",C.goldLt);
+              }
+            }} style={{
+              background:C.goldLt,border:`1px solid ${C.gold}`,borderRadius:10,
+              padding:"10px 24px",color:C.text,fontSize:14,fontWeight:"bold",
+              cursor:"pointer",fontFamily:"Georgia,serif",
+            }}>💡 Reveal a letter (last chance!)</button>
+          </div>
+        )}
         {gameState!=="playing"&&(
           <div style={{
             background:gameState==="won"?(isDaily?C.goldLt:C.greenLt):C.redLt,
@@ -1506,7 +1544,23 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 <div style={{fontSize:10,letterSpacing:"0.3em",color:isDaily?C.gold:C.green,textTransform:"uppercase",marginBottom:6}}>
                   {isDaily?"Daily Challenge Complete!":"Level Complete!"}
                 </div>
-                {isDaily&&streak>0&&<div style={{fontSize:16,color:C.gold,fontWeight:"bold",marginBottom:8}}>🔥 {streak} day streak</div>}
+                {result?.perfect && (
+                  <div style={{fontSize:13,color:C.gold,fontWeight:"bold",marginBottom:6,
+                    background:C.goldLt,borderRadius:8,padding:"4px 12px",display:"inline-block"}}>
+                    ⭐ Perfect — no wrong guesses!
+                  </div>
+                )}
+                {isDaily&&streak>0&&(
+                  <div style={{fontSize:16,color:C.gold,fontWeight:"bold",marginBottom:4}}>
+                    🔥 {streak} day streak
+                    {[7,30,100].includes(streak)&&<span style={{marginLeft:8,fontSize:12,background:C.gold,color:C.bg,borderRadius:6,padding:"2px 8px"}}>Milestone!</span>}
+                  </div>
+                )}
+                {isDaily&&[7,30,100].includes(streak)&&(
+                  <div style={{fontSize:12,color:C.textMid,marginBottom:8,fontStyle:"italic"}}>
+                    {streak===7?"One week streak — incredible!":streak===30?"30 days straight — legendary!":"100 days — you are unstoppable!"}
+                  </div>
+                )}
                 <div style={{fontSize:72,fontWeight:"bold",color:C.text,lineHeight:1}}>{result.grade}</div>
                 <div style={{fontSize:22,color:C.text,marginTop:4}}>{result.score}<span style={{fontSize:14,color:C.textLight}}>/100</span></div>
                 <div style={{fontSize:13,color:C.textLight,marginTop:2,fontFamily:"monospace"}}>{fmt(result.seconds)}</div>
@@ -1533,10 +1587,11 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 <div style={{fontSize:18,fontWeight:"bold",color:C.red,marginBottom:6}}>Out of guesses!</div>
                 <div style={{fontSize:13,color:C.textMid,fontStyle:"italic",marginBottom:20}}>Think you know the words? Try again!</div>
                 <button onClick={()=>{
-                  setRevealed(new Set());setGuessedWords(new Set());setLetterLeft(5);
+                  setRevealed(new Set());setGuessedWords(new Set());setLetterLeft(startingLetters);
                   setSeconds(0);setGameState("playing");setSelected(null);
                   setWrongLetters(new Set());setCorrectLetters(new Set());
                   setToast(null);setPulsingCells(new Set());setBurst(null);setConfetti(false);
+                  setIsPerfect(true);setHintUsed(false);
                 }} style={{
                   width:"100%",background:C.text,border:"none",borderRadius:10,
                   color:C.bg,padding:"14px",fontSize:15,fontWeight:"bold",

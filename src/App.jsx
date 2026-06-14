@@ -1035,32 +1035,13 @@ function HowToPlay({ onClose }) {
 function UsernameScreen({ onSet }) {
   const [value,    setValue]    = useState("");
   const [error,    setError]    = useState("");
-  const [checking, setChecking] = useState(false);
   const [showHow,  setShowHow]  = useState(false);
 
   async function submit() {
     const name = value.trim();
-    if (!name)          { setError("Please enter a username"); return; }
-    if (name.length < 2){ setError("At least 2 characters"); return; }
+    if (!name)           { setError("Please enter a username"); return; }
+    if (name.length < 2) { setError("At least 2 characters"); return; }
     if (name.length > 20){ setError("Max 20 characters"); return; }
-
-    setChecking(true);
-    setError("");
-    const deviceId = getDeviceId();
-    const status = await checkUsername(name, deviceId);
-
-    if (status === "taken") {
-      setError("That username is already taken — please choose another");
-      setChecking(false);
-      return;
-    }
-
-    if (status === "free") {
-      await registerUsername(name, deviceId);
-    }
-    // "yours" = they already own it, just let them back in
-
-    setChecking(false);
     onSet(name);
   }
 
@@ -1115,11 +1096,11 @@ function UsernameScreen({ onSet }) {
           }}
         />
         {error&&<div style={{fontSize:13,color:C.red,marginBottom:8,fontStyle:"italic"}}>{error}</div>}
-        <button onClick={submit} disabled={checking} style={{
-          width:"100%",background:checking?C.accentLt:C.text,border:"none",borderRadius:10,
-          color:checking?C.textMid:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
-          cursor:checking?"default":"pointer",fontFamily:"Georgia,serif",marginBottom:10,
-        }}>{checking ? "Checking..." : "Play Now \u2192"}</button>
+        <button onClick={submit} style={{
+          width:"100%",background:C.text,border:"none",borderRadius:10,
+          color:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
+          cursor:"pointer",fontFamily:"Georgia,serif",marginBottom:10,
+        }}>Play Now →</button>
         <button onClick={()=>setShowHow(true)} style={{
           width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:10,
           color:C.textMid,padding:"11px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",

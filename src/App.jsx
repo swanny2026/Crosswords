@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── SUPABASE ────────────────────────────────────────────────────────────────
-const SUPABASE_URL = "YOUR_SUPABASE_URL";
-const SUPABASE_KEY = "YOUR_SUPABASE_ANON_KEY";
+const SUPABASE_URL = "https://pprypxcjbeeuagfsfnwe.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwcnlweGNqYmVldWFnZnNmbndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MDc5NTAsImV4cCI6MjA5Njk4Mzk1MH0.lERWI7-Ce5Zf-Y2v2LqoWYNfMJa3b9AXEqQruwpF3TA";
 
 async function dbRequest(method, path, body) {
   try {
@@ -27,6 +27,27 @@ async function submitScore(data) {
 
 async function fetchLeaderboard() {
   return dbRequest("GET", "scores?select=username,mode,level,seconds,score,streak,created_at&order=created_at.desc&limit=500");
+}
+
+// Returns "taken" | "yours" | "free"
+async function checkUsername(username, deviceId) {
+  const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(username)}&select=device_id`);
+  if (!rows || rows.length === 0) return "free";
+  if (rows[0].device_id === deviceId) return "yours";
+  return "taken";
+}
+
+async function registerUsername(username, deviceId) {
+  return dbRequest("POST", "players", { username, device_id: deviceId });
+}
+
+function getDeviceId() {
+  let id = localStorage.getItem("cw_device_id");
+  if (!id) {
+    id = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+    localStorage.setItem("cw_device_id", id);
+  }
+  return id;
 }
 
 // ─── SCORING ─────────────────────────────────────────────────────────────────
@@ -68,7 +89,7 @@ function getTodayKey() {
 // ─── PUZZLES ─────────────────────────────────────────────────────────────────
 const PUZZLES = [
   { level: 1, words: [ {id:0,word:"BLANKET",row:0,col:0,direction:"across"},{id:1,word:"GUST",row:3,col:0,direction:"across"},{id:2,word:"TIER",row:5,col:0,direction:"across"},{id:3,word:"BLIGHT",row:0,col:0,direction:"down"},{id:4,word:"NATTER",row:0,col:3,direction:"down"} ] },
-  { level: 2, words: [ {id:0,word:"CHAPTER",row:0,col:0,direction:"across"},{id:1,word:"NOVA",row:3,col:0,direction:"across"},{id:2,word:"EVIL",row:5,col:0,direction:"across"},{id:3,word:"CRINGE",row:0,col:0,direction:"down"},{id:4,word:"PETAL",row:0,col:3,direction:"down"} ] },
+  { level: 2, words: [ {id:0,word:"CHAPTER",row:0,col:0,direction:"across"},{id:1,word:"NARC",row:3,col:0,direction:"across"},{id:2,word:"EARL",row:5,col:0,direction:"across"},{id:3,word:"CRINGE",row:0,col:0,direction:"down"},{id:4,word:"PENCIL",row:0,col:3,direction:"down"} ] },
   { level: 3, words: [ {id:0,word:"WHISPER",row:0,col:0,direction:"across"},{id:1,word:"BETA",row:3,col:0,direction:"across"},{id:2,word:"TALL",row:5,col:0,direction:"across"},{id:3,word:"WOMBAT",row:0,col:0,direction:"down"},{id:4,word:"SCRAWL",row:0,col:3,direction:"down"} ] },
   { level: 4, words: [ {id:0,word:"JOURNEY",row:0,col:0,direction:"across"},{id:1,word:"SNAP",row:3,col:0,direction:"across"},{id:2,word:"WIDE",row:5,col:0,direction:"across"},{id:3,word:"JIGSAW",row:0,col:0,direction:"down"},{id:4,word:"RIPPLE",row:0,col:3,direction:"down"} ] },
   { level: 5, words: [ {id:0,word:"COMPLEX",row:0,col:0,direction:"across"},{id:1,word:"WORN",row:3,col:0,direction:"across"},{id:2,word:"BASH",row:5,col:0,direction:"across"},{id:3,word:"COBWEB",row:0,col:0,direction:"down"},{id:4,word:"PLINTH",row:0,col:3,direction:"down"} ] },
@@ -98,10 +119,10 @@ const PUZZLES = [
   { level: 29, words: [ {id:0,word:"MEASURE",row:0,col:0,direction:"across"},{id:1,word:"HAIR",row:3,col:0,direction:"across"},{id:2,word:"DEMO",row:5,col:0,direction:"across"},{id:3,word:"METHOD",row:0,col:0,direction:"down"},{id:4,word:"STEREO",row:0,col:3,direction:"down"} ] },
   { level: 30, words: [ {id:0,word:"WHISTLE",row:0,col:0,direction:"across"},{id:1,word:"DART",row:3,col:0,direction:"across"},{id:2,word:"RAIN",row:5,col:0,direction:"across"},{id:3,word:"WONDER",row:0,col:0,direction:"down"},{id:4,word:"SULTAN",row:0,col:3,direction:"down"} ] },
   { level: 31, words: [ {id:0,word:"SUSPECT",row:0,col:0,direction:"across"},{id:1,word:"VAMP",row:3,col:0,direction:"across"},{id:2,word:"LOVE",row:5,col:0,direction:"across"},{id:3,word:"SHOVEL",row:0,col:0,direction:"down"},{id:4,word:"PURPLE",row:0,col:3,direction:"down"} ] },
-  { level: 32, words: [ {id:0,word:"NETWORK",row:0,col:0,direction:"across"},{id:1,word:"KNUR",row:3,col:0,direction:"across"},{id:2,word:"LOSS",row:5,col:0,direction:"across"},{id:3,word:"NICKEL",row:0,col:0,direction:"down"},{id:4,word:"WALRUS",row:0,col:3,direction:"down"} ] },
+  { level: 32, words: [ {id:0,word:"NETWORK",row:0,col:0,direction:"across"},{id:1,word:"LIAR",row:3,col:0,direction:"across"},{id:2,word:"REDS",row:5,col:0,direction:"across"},{id:3,word:"NAILER",row:0,col:0,direction:"down"},{id:4,word:"WALRUS",row:0,col:3,direction:"down"} ] },
   { level: 33, words: [ {id:0,word:"COMFORT",row:0,col:0,direction:"across"},{id:1,word:"DRAB",row:3,col:0,direction:"across"},{id:2,word:"ROLE",row:5,col:0,direction:"across"},{id:3,word:"CINDER",row:0,col:0,direction:"down"},{id:4,word:"FUMBLE",row:0,col:3,direction:"down"} ] },
   { level: 34, words: [ {id:0,word:"WEATHER",row:0,col:0,direction:"across"},{id:1,word:"LOGO",row:3,col:0,direction:"across"},{id:2,word:"TUNE",row:5,col:0,direction:"across"},{id:3,word:"WALLET",row:0,col:0,direction:"down"},{id:4,word:"THRONE",row:0,col:3,direction:"down"} ] },
-  { level: 35, words: [ {id:0,word:"COLLECT",row:0,col:0,direction:"across"},{id:1,word:"WEBB",row:3,col:0,direction:"across"},{id:2,word:"BURR",row:5,col:0,direction:"across"},{id:3,word:"COBWEB",row:0,col:0,direction:"down"},{id:4,word:"LUMBER",row:0,col:3,direction:"down"} ] },
+  { level: 35, words: [ {id:0,word:"COLLECT",row:0,col:0,direction:"across"},{id:1,word:"WOMB",row:3,col:0,direction:"across"},{id:2,word:"BURR",row:5,col:0,direction:"across"},{id:3,word:"COBWEB",row:0,col:0,direction:"down"},{id:4,word:"LUMBER",row:0,col:3,direction:"down"} ] },
   { level: 36, words: [ {id:0,word:"BRACKET",row:0,col:0,direction:"across"},{id:1,word:"HALT",row:3,col:0,direction:"across"},{id:2,word:"RULE",row:5,col:0,direction:"across"},{id:3,word:"BOTHER",row:0,col:0,direction:"down"},{id:4,word:"CASTLE",row:0,col:3,direction:"down"} ] },
   { level: 37, words: [ {id:0,word:"DOLPHIN",row:0,col:0,direction:"across"},{id:1,word:"KILT",row:3,col:0,direction:"across"},{id:2,word:"YARN",row:5,col:0,direction:"across"},{id:3,word:"DONKEY",row:0,col:0,direction:"down"},{id:4,word:"PISTON",row:0,col:3,direction:"down"} ] },
   { level: 38, words: [ {id:0,word:"EMPEROR",row:0,col:0,direction:"across"},{id:1,word:"BULL",row:3,col:0,direction:"across"},{id:2,word:"EASY",row:5,col:0,direction:"across"},{id:3,word:"ENABLE",row:0,col:0,direction:"down"},{id:4,word:"EMPLOY",row:0,col:3,direction:"down"} ] },
@@ -216,11 +237,11 @@ const PUZZLES = [
   { level: 147, words: [ {id:0,word:"HABITAT",row:0,col:0,direction:"across"},{id:1,word:"LOGO",row:3,col:0,direction:"across"},{id:2,word:"HOSE",row:5,col:0,direction:"across"},{id:3,word:"HEALTH",row:0,col:0,direction:"down"},{id:4,word:"IMPOSE",row:0,col:3,direction:"down"} ] },
   { level: 148, words: [ {id:0,word:"HARBOUR",row:0,col:0,direction:"across"},{id:1,word:"THIN",row:3,col:0,direction:"across"},{id:2,word:"EDGY",row:5,col:0,direction:"across"},{id:3,word:"HUSTLE",row:0,col:0,direction:"down"},{id:4,word:"BOUNTY",row:0,col:3,direction:"down"} ] },
   { level: 149, words: [ {id:0,word:"DARKENS",row:0,col:0,direction:"across"},{id:1,word:"KIND",row:3,col:0,direction:"across"},{id:2,word:"YEAR",row:5,col:0,direction:"across"},{id:3,word:"DONKEY",row:0,col:0,direction:"down"},{id:4,word:"KINDER",row:0,col:3,direction:"down"} ] },
-  { level: 150, words: [ {id:0,word:"HEALING",row:0,col:0,direction:"across"},{id:1,word:"AMID",row:3,col:0,direction:"across"},{id:2,word:"KNUR",row:5,col:0,direction:"across"},{id:3,word:"HIJACK",row:0,col:0,direction:"down"},{id:4,word:"LEADER",row:0,col:3,direction:"down"} ] },
+  { level: 150, words: [ {id:0,word:"HEALING",row:0,col:0,direction:"across"},{id:1,word:"TOAD",row:3,col:0,direction:"across"},{id:2,word:"REAR",row:5,col:0,direction:"across"},{id:3,word:"HALTER",row:0,col:0,direction:"down"},{id:4,word:"LEADER",row:0,col:3,direction:"down"} ] },
   { level: 151, words: [ {id:0,word:"WITHOUT",row:0,col:0,direction:"across"},{id:1,word:"BLAB",row:3,col:0,direction:"across"},{id:2,word:"EDGE",row:5,col:0,direction:"across"},{id:3,word:"WOBBLE",row:0,col:0,direction:"down"},{id:4,word:"HOBBLE",row:0,col:3,direction:"down"} ] },
   { level: 152, words: [ {id:0,word:"SEEKING",row:0,col:0,direction:"across"},{id:1,word:"BATH",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"STABLE",row:0,col:0,direction:"down"},{id:4,word:"KOSHER",row:0,col:3,direction:"down"} ] },
   { level: 153, words: [ {id:0,word:"ADVISER",row:0,col:0,direction:"across"},{id:1,word:"EASE",row:3,col:0,direction:"across"},{id:2,word:"TAUT",row:5,col:0,direction:"across"},{id:3,word:"ARDENT",row:0,col:0,direction:"down"},{id:4,word:"INSECT",row:0,col:3,direction:"down"} ] },
-  { level: 154, words: [ {id:0,word:"ENQUIRY",row:0,col:0,direction:"across"},{id:1,word:"OTTO",row:3,col:0,direction:"across"},{id:2,word:"TASK",row:5,col:0,direction:"across"},{id:3,word:"EXPORT",row:0,col:0,direction:"down"},{id:4,word:"UNLOCK",row:0,col:3,direction:"down"} ] },
+  { level: 154, words: [ {id:0,word:"ENQUIRY",row:0,col:0,direction:"across"},{id:1,word:"ONTO",row:3,col:0,direction:"across"},{id:2,word:"TASK",row:5,col:0,direction:"across"},{id:3,word:"EXPORT",row:0,col:0,direction:"down"},{id:4,word:"UNLOCK",row:0,col:3,direction:"down"} ] },
   { level: 155, words: [ {id:0,word:"STAYING",row:0,col:0,direction:"across"},{id:1,word:"BOND",row:3,col:0,direction:"across"},{id:2,word:"LIAR",row:5,col:0,direction:"across"},{id:3,word:"SYMBOL",row:0,col:0,direction:"down"},{id:4,word:"YONDER",row:0,col:3,direction:"down"} ] },
   { level: 156, words: [ {id:0,word:"REVISED",row:0,col:0,direction:"across"},{id:1,word:"UNDO",row:3,col:0,direction:"across"},{id:2,word:"THEM",row:5,col:0,direction:"across"},{id:3,word:"ROBUST",row:0,col:0,direction:"down"},{id:4,word:"INFORM",row:0,col:3,direction:"down"} ] },
   { level: 157, words: [ {id:0,word:"REFRESH",row:0,col:0,direction:"across"},{id:1,word:"TUNA",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"RUSTLE",row:0,col:0,direction:"down"},{id:4,word:"REPAIR",row:0,col:3,direction:"down"} ] },
@@ -277,7 +298,7 @@ const PUZZLES = [
   { level: 208, words: [ {id:0,word:"ADVANCE",row:0,col:0,direction:"across"},{id:1,word:"EASE",row:3,col:0,direction:"across"},{id:2,word:"TRAD",row:5,col:0,direction:"across"},{id:3,word:"AFFECT",row:0,col:0,direction:"down"},{id:4,word:"ATTEND",row:0,col:3,direction:"down"} ] },
   { level: 209, words: [ {id:0,word:"ENCLOSE",row:0,col:0,direction:"across"},{id:1,word:"USED",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"EXCUSE",row:0,col:0,direction:"down"},{id:4,word:"LEADER",row:0,col:3,direction:"down"} ] },
   { level: 210, words: [ {id:0,word:"HARVEST",row:0,col:0,direction:"across"},{id:1,word:"BAIT",row:3,col:0,direction:"across"},{id:2,word:"EXAM",row:5,col:0,direction:"across"},{id:3,word:"HOBBLE",row:0,col:0,direction:"down"},{id:4,word:"VICTIM",row:0,col:3,direction:"down"} ] },
-  { level: 211, words: [ {id:0,word:"EARTHEN",row:0,col:0,direction:"across"},{id:1,word:"ATOM",row:3,col:0,direction:"across"},{id:2,word:"KNUR",row:5,col:0,direction:"across"},{id:3,word:"EMBARK",row:0,col:0,direction:"down"},{id:4,word:"TREMOR",row:0,col:3,direction:"down"} ] },
+  { level: 211, words: [ {id:0,word:"EARTHEN",row:0,col:0,direction:"across"},{id:1,word:"ATOM",row:3,col:0,direction:"across"},{id:2,word:"LIAR",row:5,col:0,direction:"across"},{id:3,word:"ENTAIL",row:0,col:0,direction:"down"},{id:4,word:"TREMOR",row:0,col:3,direction:"down"} ] },
   { level: 212, words: [ {id:0,word:"TALKING",row:0,col:0,direction:"across"},{id:1,word:"DEED",row:3,col:0,direction:"across"},{id:2,word:"ROAR",row:5,col:0,direction:"across"},{id:3,word:"TENDER",row:0,col:0,direction:"down"},{id:4,word:"KINDER",row:0,col:3,direction:"down"} ] },
   { level: 213, words: [ {id:0,word:"AUCTION",row:0,col:0,direction:"across"},{id:1,word:"OVUM",row:3,col:0,direction:"across"},{id:2,word:"BURR",row:5,col:0,direction:"across"},{id:3,word:"ABSORB",row:0,col:0,direction:"down"},{id:4,word:"TREMOR",row:0,col:3,direction:"down"} ] },
   { level: 214, words: [ {id:0,word:"REFEREE",row:0,col:0,direction:"across"},{id:1,word:"OGRE",row:3,col:0,direction:"across"},{id:2,word:"TOUT",row:5,col:0,direction:"across"},{id:3,word:"REVOLT",row:0,col:0,direction:"down"},{id:4,word:"EXPERT",row:0,col:3,direction:"down"} ] },
@@ -362,7 +383,7 @@ const DAILY_PUZZLES = [
   { day: 40, words: [ {id:0,word:"YOUNGER",row:0,col:0,direction:"across"},{id:1,word:"DECK",row:3,col:0,direction:"across"},{id:2,word:"REAL",row:5,col:0,direction:"across"},{id:3,word:"YONDER",row:0,col:0,direction:"down"},{id:4,word:"NICKEL",row:0,col:3,direction:"down"} ] },
   { day: 41, words: [ {id:0,word:"SESSION",row:0,col:0,direction:"across"},{id:1,word:"MOOR",row:3,col:0,direction:"across"},{id:2,word:"NEWT",row:5,col:0,direction:"across"},{id:3,word:"SUMMON",row:0,col:0,direction:"down"},{id:4,word:"SECRET",row:0,col:3,direction:"down"} ] },
   { day: 42, words: [ {id:0,word:"HEATING",row:0,col:0,direction:"across"},{id:1,word:"TILT",row:3,col:0,direction:"across"},{id:2,word:"ROAR",row:5,col:0,direction:"across"},{id:3,word:"HUNTER",row:0,col:0,direction:"down"},{id:4,word:"TEETER",row:0,col:3,direction:"down"} ] },
-  { day: 43, words: [ {id:0,word:"DECLARE",row:0,col:0,direction:"across"},{id:1,word:"AIDE",row:3,col:0,direction:"across"},{id:2,word:"EGGY",row:5,col:0,direction:"across"},{id:3,word:"DEBATE",row:0,col:0,direction:"down"},{id:4,word:"LIVELY",row:0,col:3,direction:"down"} ] },
+  { day: 43, words: [ {id:0,word:"DECLARE",row:0,col:0,direction:"across"},{id:1,word:"AIDE",row:3,col:0,direction:"across"},{id:2,word:"EASY",row:5,col:0,direction:"across"},{id:3,word:"DEBATE",row:0,col:0,direction:"down"},{id:4,word:"LIVELY",row:0,col:3,direction:"down"} ] },
   { day: 44, words: [ {id:0,word:"QUANTUM",row:0,col:0,direction:"across"},{id:1,word:"NECK",row:3,col:0,direction:"across"},{id:2,word:"HEAL",row:5,col:0,direction:"across"},{id:3,word:"QUENCH",row:0,col:0,direction:"down"},{id:4,word:"NICKEL",row:0,col:3,direction:"down"} ] },
   { day: 45, words: [ {id:0,word:"VENTURE",row:0,col:0,direction:"across"},{id:1,word:"LINK",row:3,col:0,direction:"across"},{id:2,word:"TUNE",row:5,col:0,direction:"across"},{id:3,word:"VIOLET",row:0,col:0,direction:"down"},{id:4,word:"TACKLE",row:0,col:3,direction:"down"} ] },
   { day: 46, words: [ {id:0,word:"LECTURE",row:0,col:0,direction:"across"},{id:1,word:"DRIP",row:3,col:0,direction:"across"},{id:2,word:"RAZE",row:5,col:0,direction:"across"},{id:3,word:"LEADER",row:0,col:0,direction:"down"},{id:4,word:"TOPPLE",row:0,col:3,direction:"down"} ] },
@@ -384,8 +405,8 @@ const DAILY_PUZZLES = [
   { day: 62, words: [ {id:0,word:"RAPIDLY",row:0,col:0,direction:"across"},{id:1,word:"SAVE",row:3,col:0,direction:"across"},{id:2,word:"NEXT",row:5,col:0,direction:"across"},{id:3,word:"REASON",row:0,col:0,direction:"down"},{id:4,word:"INSECT",row:0,col:3,direction:"down"} ] },
   { day: 63, words: [ {id:0,word:"COMPILE",row:0,col:0,direction:"across"},{id:1,word:"WOLF",row:3,col:0,direction:"across"},{id:2,word:"BUST",row:5,col:0,direction:"across"},{id:3,word:"COBWEB",row:0,col:0,direction:"down"},{id:4,word:"PROFIT",row:0,col:3,direction:"down"} ] },
   { day: 64, words: [ {id:0,word:"PROVIDE",row:0,col:0,direction:"across"},{id:1,word:"IOTA",row:3,col:0,direction:"across"},{id:2,word:"YORE",row:5,col:0,direction:"across"},{id:3,word:"PACIFY",row:0,col:0,direction:"down"},{id:4,word:"VISAGE",row:0,col:3,direction:"down"} ] },
-  { day: 65, words: [ {id:0,word:"FLATTEN",row:0,col:0,direction:"across"},{id:1,word:"BUMP",row:3,col:0,direction:"across"},{id:2,word:"EIRE",row:5,col:0,direction:"across"},{id:3,word:"FUMBLE",row:0,col:0,direction:"down"},{id:4,word:"TEMPLE",row:0,col:3,direction:"down"} ] },
-  { day: 66, words: [ {id:0,word:"CONCERN",row:0,col:0,direction:"across"},{id:1,word:"REPO",row:3,col:0,direction:"across"},{id:2,word:"EIRE",row:5,col:0,direction:"across"},{id:3,word:"CHARGE",row:0,col:0,direction:"down"},{id:4,word:"CAJOLE",row:0,col:3,direction:"down"} ] },
+  { day: 65, words: [ {id:0,word:"FLATTEN",row:0,col:0,direction:"across"},{id:1,word:"BUMP",row:3,col:0,direction:"across"},{id:2,word:"EASE",row:5,col:0,direction:"across"},{id:3,word:"FUMBLE",row:0,col:0,direction:"down"},{id:4,word:"TEMPLE",row:0,col:3,direction:"down"} ] },
+  { day: 66, words: [ {id:0,word:"CONCERN",row:0,col:0,direction:"across"},{id:1,word:"REPO",row:3,col:0,direction:"across"},{id:2,word:"EASE",row:5,col:0,direction:"across"},{id:3,word:"CHARGE",row:0,col:0,direction:"down"},{id:4,word:"CAJOLE",row:0,col:3,direction:"down"} ] },
   { day: 67, words: [ {id:0,word:"RESOLVE",row:0,col:0,direction:"across"},{id:1,word:"AUTO",row:3,col:0,direction:"across"},{id:2,word:"EDGE",row:5,col:0,direction:"across"},{id:3,word:"RELATE",row:0,col:0,direction:"down"},{id:4,word:"OPPOSE",row:0,col:3,direction:"down"} ] },
   { day: 68, words: [ {id:0,word:"VISIBLE",row:0,col:0,direction:"across"},{id:1,word:"INTO",row:3,col:0,direction:"across"},{id:2,word:"HALT",row:5,col:0,direction:"across"},{id:3,word:"VANISH",row:0,col:0,direction:"down"},{id:4,word:"IMPORT",row:0,col:3,direction:"down"} ] },
   { day: 69, words: [ {id:0,word:"RESERVE",row:0,col:0,direction:"across"},{id:1,word:"PLEA",row:3,col:0,direction:"across"},{id:2,word:"ELSE",row:5,col:0,direction:"across"},{id:3,word:"RIPPLE",row:0,col:0,direction:"down"},{id:4,word:"ESTATE",row:0,col:3,direction:"down"} ] },
@@ -414,7 +435,7 @@ const DAILY_PUZZLES = [
   { day: 92, words: [ {id:0,word:"LANTERN",row:0,col:0,direction:"across"},{id:1,word:"EXIT",row:3,col:0,direction:"across"},{id:2,word:"YEAR",row:5,col:0,direction:"across"},{id:3,word:"LIVELY",row:0,col:0,direction:"down"},{id:4,word:"TEETER",row:0,col:3,direction:"down"} ] },
   { day: 93, words: [ {id:0,word:"CARTOON",row:0,col:0,direction:"across"},{id:1,word:"MAIM",row:3,col:0,direction:"across"},{id:2,word:"YEAR",row:5,col:0,direction:"across"},{id:3,word:"CLUMSY",row:0,col:0,direction:"down"},{id:4,word:"TREMOR",row:0,col:3,direction:"down"} ] },
   { day: 94, words: [ {id:0,word:"ADVISER",row:0,col:0,direction:"across"},{id:1,word:"INTO",row:3,col:0,direction:"across"},{id:2,word:"TOUT",row:5,col:0,direction:"across"},{id:3,word:"ADRIFT",row:0,col:0,direction:"down"},{id:4,word:"IMPORT",row:0,col:3,direction:"down"} ] },
-  { day: 95, words: [ {id:0,word:"SUCCESS",row:0,col:0,direction:"across"},{id:1,word:"EGAD",row:3,col:0,direction:"across"},{id:2,word:"NEAR",row:5,col:0,direction:"across"},{id:3,word:"SOLEMN",row:0,col:0,direction:"down"},{id:4,word:"CINDER",row:0,col:3,direction:"down"} ] },
+  { day: 95, words: [ {id:0,word:"SUCCESS",row:0,col:0,direction:"across"},{id:1,word:"EYED",row:3,col:0,direction:"across"},{id:2,word:"NEAR",row:5,col:0,direction:"across"},{id:3,word:"SOLEMN",row:0,col:0,direction:"down"},{id:4,word:"CINDER",row:0,col:3,direction:"down"} ] },
   { day: 96, words: [ {id:0,word:"SUPPORT",row:0,col:0,direction:"across"},{id:1,word:"VEIN",row:3,col:0,direction:"across"},{id:2,word:"RICH",row:5,col:0,direction:"across"},{id:3,word:"SHIVER",row:0,col:0,direction:"down"},{id:4,word:"PLINTH",row:0,col:3,direction:"down"} ] },
   { day: 97, words: [ {id:0,word:"PREMIER",row:0,col:0,direction:"across"},{id:1,word:"FIST",row:3,col:0,direction:"across"},{id:2,word:"TOKE",row:5,col:0,direction:"across"},{id:3,word:"PROFIT",row:0,col:0,direction:"down"},{id:4,word:"MYRTLE",row:0,col:3,direction:"down"} ] },
   { day: 98, words: [ {id:0,word:"CHIMNEY",row:0,col:0,direction:"across"},{id:1,word:"VENT",row:3,col:0,direction:"across"},{id:2,word:"YARN",row:5,col:0,direction:"across"},{id:3,word:"CONVEY",row:0,col:0,direction:"down"},{id:4,word:"MOLTEN",row:0,col:3,direction:"down"} ] },
@@ -463,7 +484,7 @@ const DAILY_PUZZLES = [
   { day: 141, words: [ {id:0,word:"IMAGINE",row:0,col:0,direction:"across"},{id:1,word:"OVAL",row:3,col:0,direction:"across"},{id:2,word:"EPIC",row:5,col:0,direction:"across"},{id:3,word:"IMPOSE",row:0,col:0,direction:"down"},{id:4,word:"GARLIC",row:0,col:3,direction:"down"} ] },
   { day: 142, words: [ {id:0,word:"EPISODE",row:0,col:0,direction:"across"},{id:1,word:"EXIT",row:3,col:0,direction:"across"},{id:2,word:"TUBE",row:5,col:0,direction:"across"},{id:3,word:"EXPERT",row:0,col:0,direction:"down"},{id:4,word:"SUBTLE",row:0,col:3,direction:"down"} ] },
   { day: 143, words: [ {id:0,word:"CONVENE",row:0,col:0,direction:"across"},{id:1,word:"DELI",row:3,col:0,direction:"across"},{id:2,word:"RICH",row:5,col:0,direction:"across"},{id:3,word:"CONDOR",row:0,col:0,direction:"down"},{id:4,word:"VANISH",row:0,col:3,direction:"down"} ] },
-  { day: 144, words: [ {id:0,word:"AILMENT",row:0,col:0,direction:"across"},{id:1,word:"HACK",row:3,col:0,direction:"across"},{id:2,word:"RIMY",row:5,col:0,direction:"across"},{id:3,word:"ANCHOR",row:0,col:0,direction:"down"},{id:4,word:"MONKEY",row:0,col:3,direction:"down"} ] },
+  { day: 144, words: [ {id:0,word:"AILMENT",row:0,col:0,direction:"across"},{id:1,word:"HACK",row:3,col:0,direction:"across"},{id:2,word:"RELY",row:5,col:0,direction:"across"},{id:3,word:"ANCHOR",row:0,col:0,direction:"down"},{id:4,word:"MONKEY",row:0,col:3,direction:"down"} ] },
   { day: 145, words: [ {id:0,word:"MANAGER",row:0,col:0,direction:"across"},{id:1,word:"TRIO",row:3,col:0,direction:"across"},{id:2,word:"RARE",row:5,col:0,direction:"across"},{id:3,word:"MUTTER",row:0,col:0,direction:"down"},{id:4,word:"ALCOVE",row:0,col:3,direction:"down"} ] },
   { day: 146, words: [ {id:0,word:"DISMISS",row:0,col:0,direction:"across"},{id:1,word:"FLAB",row:3,col:0,direction:"across"},{id:2,word:"RISE",row:5,col:0,direction:"across"},{id:3,word:"DIFFER",row:0,col:0,direction:"down"},{id:4,word:"MARBLE",row:0,col:3,direction:"down"} ] },
   { day: 147, words: [ {id:0,word:"CONFIDE",row:0,col:0,direction:"across"},{id:1,word:"GOAL",row:3,col:0,direction:"across"},{id:2,word:"THAW",row:5,col:0,direction:"across"},{id:3,word:"CAUGHT",row:0,col:0,direction:"down"},{id:4,word:"FOLLOW",row:0,col:3,direction:"down"} ] },
@@ -503,7 +524,7 @@ const DAILY_PUZZLES = [
   { day: 181, words: [ {id:0,word:"RECEIPT",row:0,col:0,direction:"across"},{id:1,word:"FETA",row:3,col:0,direction:"across"},{id:2,word:"ELSE",row:5,col:0,direction:"across"},{id:3,word:"RUFFLE",row:0,col:0,direction:"down"},{id:4,word:"EFFACE",row:0,col:3,direction:"down"} ] },
   { day: 182, words: [ {id:0,word:"SERVICE",row:0,col:0,direction:"across"},{id:1,word:"TOIL",row:3,col:0,direction:"across"},{id:2,word:"HINT",row:5,col:0,direction:"across"},{id:3,word:"SWITCH",row:0,col:0,direction:"down"},{id:4,word:"VIOLET",row:0,col:3,direction:"down"} ] },
   { day: 183, words: [ {id:0,word:"OBSCURE",row:0,col:0,direction:"across"},{id:1,word:"EXIT",row:3,col:0,direction:"across"},{id:2,word:"TIME",row:5,col:0,direction:"across"},{id:3,word:"OBJECT",row:0,col:0,direction:"down"},{id:4,word:"CATTLE",row:0,col:3,direction:"down"} ] },
-  { day: 184, words: [ {id:0,word:"WORSHIP",row:0,col:0,direction:"across"},{id:1,word:"DUST",row:3,col:0,direction:"across"},{id:2,word:"EIRE",row:5,col:0,direction:"across"},{id:3,word:"WADDLE",row:0,col:0,direction:"down"},{id:4,word:"SUBTLE",row:0,col:3,direction:"down"} ] },
+  { day: 184, words: [ {id:0,word:"WORSHIP",row:0,col:0,direction:"across"},{id:1,word:"DUST",row:3,col:0,direction:"across"},{id:2,word:"EASE",row:5,col:0,direction:"across"},{id:3,word:"WADDLE",row:0,col:0,direction:"down"},{id:4,word:"SUBTLE",row:0,col:3,direction:"down"} ] },
   { day: 185, words: [ {id:0,word:"ENCLOSE",row:0,col:0,direction:"across"},{id:1,word:"ARMY",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"ESCAPE",row:0,col:0,direction:"down"},{id:4,word:"LAWYER",row:0,col:3,direction:"down"} ] },
   { day: 186, words: [ {id:0,word:"GENUINE",row:0,col:0,direction:"across"},{id:1,word:"DATA",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"GRUDGE",row:0,col:0,direction:"down"},{id:4,word:"UNFAIR",row:0,col:3,direction:"down"} ] },
   { day: 187, words: [ {id:0,word:"UTILIZE",row:0,col:0,direction:"across"},{id:1,word:"AMID",row:3,col:0,direction:"across"},{id:2,word:"ROAR",row:5,col:0,direction:"across"},{id:3,word:"UNFAIR",row:0,col:0,direction:"down"},{id:4,word:"LEADER",row:0,col:3,direction:"down"} ] },
@@ -515,7 +536,7 @@ const DAILY_PUZZLES = [
   { day: 193, words: [ {id:0,word:"CONTENT",row:0,col:0,direction:"across"},{id:1,word:"KNOB",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"CACKLE",row:0,col:0,direction:"down"},{id:4,word:"TIMBER",row:0,col:3,direction:"down"} ] },
   { day: 194, words: [ {id:0,word:"MIRACLE",row:0,col:0,direction:"across"},{id:1,word:"REPO",row:3,col:0,direction:"across"},{id:2,word:"RAID",row:5,col:0,direction:"across"},{id:3,word:"MIRROR",row:0,col:0,direction:"down"},{id:4,word:"ACCORD",row:0,col:3,direction:"down"} ] },
   { day: 195, words: [ {id:0,word:"FURNACE",row:0,col:0,direction:"across"},{id:1,word:"THOU",row:3,col:0,direction:"across"},{id:2,word:"NAVE",row:5,col:0,direction:"across"},{id:3,word:"FATTEN",row:0,col:0,direction:"down"},{id:4,word:"NATURE",row:0,col:3,direction:"down"} ] },
-  { day: 196, words: [ {id:0,word:"CONSENT",row:0,col:0,direction:"across"},{id:1,word:"KEPI",row:3,col:0,direction:"across"},{id:2,word:"EIRE",row:5,col:0,direction:"across"},{id:3,word:"CACKLE",row:0,col:0,direction:"down"},{id:4,word:"STRIVE",row:0,col:3,direction:"down"} ] },
+  { day: 196, words: [ {id:0,word:"CONSENT",row:0,col:0,direction:"across"},{id:1,word:"KEPI",row:3,col:0,direction:"across"},{id:2,word:"EASE",row:5,col:0,direction:"across"},{id:3,word:"CACKLE",row:0,col:0,direction:"down"},{id:4,word:"STRIVE",row:0,col:3,direction:"down"} ] },
   { day: 197, words: [ {id:0,word:"LEISURE",row:0,col:0,direction:"across"},{id:1,word:"SOMA",row:3,col:0,direction:"across"},{id:2,word:"NAIL",row:5,col:0,direction:"across"},{id:3,word:"LESSEN",row:0,col:0,direction:"down"},{id:4,word:"SCRAWL",row:0,col:3,direction:"down"} ] },
   { day: 198, words: [ {id:0,word:"ENFORCE",row:0,col:0,direction:"across"},{id:1,word:"OMIT",row:3,col:0,direction:"across"},{id:2,word:"TIER",row:5,col:0,direction:"across"},{id:3,word:"EXPORT",row:0,col:0,direction:"down"},{id:4,word:"OYSTER",row:0,col:3,direction:"down"} ] },
   { day: 199, words: [ {id:0,word:"FREEDOM",row:0,col:0,direction:"across"},{id:1,word:"TIME",row:3,col:0,direction:"across"},{id:2,word:"ROOT",row:5,col:0,direction:"across"},{id:3,word:"FOSTER",row:0,col:0,direction:"down"},{id:4,word:"EFFECT",row:0,col:3,direction:"down"} ] },
@@ -545,7 +566,7 @@ const DAILY_PUZZLES = [
   { day: 223, words: [ {id:0,word:"SURVIVE",row:0,col:0,direction:"across"},{id:1,word:"LEFT",row:3,col:0,direction:"across"},{id:2,word:"NOSE",row:5,col:0,direction:"across"},{id:3,word:"STOLEN",row:0,col:0,direction:"down"},{id:4,word:"VIRTUE",row:0,col:3,direction:"down"} ] },
   { day: 224, words: [ {id:0,word:"FAILING",row:0,col:0,direction:"across"},{id:1,word:"TATS",row:3,col:0,direction:"across"},{id:2,word:"REIN",row:5,col:0,direction:"across"},{id:3,word:"FOSTER",row:0,col:0,direction:"down"},{id:4,word:"LOOSEN",row:0,col:3,direction:"down"} ] },
   { day: 225, words: [ {id:0,word:"GLITTER",row:0,col:0,direction:"across"},{id:1,word:"DRAG",row:3,col:0,direction:"across"},{id:2,word:"NEWT",row:5,col:0,direction:"across"},{id:3,word:"GARDEN",row:0,col:0,direction:"down"},{id:4,word:"TARGET",row:0,col:3,direction:"down"} ] },
-  { day: 226, words: [ {id:0,word:"FORGIVE",row:0,col:0,direction:"across"},{id:1,word:"ZEAL",row:3,col:0,direction:"across"},{id:2,word:"EELY",row:5,col:0,direction:"across"},{id:3,word:"FIZZLE",row:0,col:0,direction:"down"},{id:4,word:"GUILTY",row:0,col:3,direction:"down"} ] },
+  { day: 226, words: [ {id:0,word:"FORGIVE",row:0,col:0,direction:"across"},{id:1,word:"ZEAL",row:3,col:0,direction:"across"},{id:2,word:"EASY",row:5,col:0,direction:"across"},{id:3,word:"FIZZLE",row:0,col:0,direction:"down"},{id:4,word:"GUILTY",row:0,col:3,direction:"down"} ] },
   { day: 227, words: [ {id:0,word:"ATTEMPT",row:0,col:0,direction:"across"},{id:1,word:"EDGE",row:3,col:0,direction:"across"},{id:2,word:"THAT",row:5,col:0,direction:"across"},{id:3,word:"ARDENT",row:0,col:0,direction:"down"},{id:4,word:"EXPECT",row:0,col:3,direction:"down"} ] },
   { day: 228, words: [ {id:0,word:"ATTRACT",row:0,col:0,direction:"across"},{id:1,word:"EXPO",row:3,col:0,direction:"across"},{id:2,word:"TRUE",row:5,col:0,direction:"across"},{id:3,word:"ARREST",row:0,col:0,direction:"down"},{id:4,word:"REMOTE",row:0,col:3,direction:"down"} ] },
   { day: 229, words: [ {id:0,word:"PATIENT",row:0,col:0,direction:"across"},{id:1,word:"AUTO",row:3,col:0,direction:"across"},{id:2,word:"EASE",row:5,col:0,direction:"across"},{id:3,word:"PIRATE",row:0,col:0,direction:"down"},{id:4,word:"IMPOSE",row:0,col:3,direction:"down"} ] },
@@ -555,7 +576,7 @@ const DAILY_PUZZLES = [
   { day: 233, words: [ {id:0,word:"UNUSUAL",row:0,col:0,direction:"across"},{id:1,word:"UPON",row:3,col:0,direction:"across"},{id:2,word:"YAWL",row:5,col:0,direction:"across"},{id:3,word:"UNRULY",row:0,col:0,direction:"down"},{id:4,word:"SIGNAL",row:0,col:3,direction:"down"} ] },
   { day: 234, words: [ {id:0,word:"EXPLODE",row:0,col:0,direction:"across"},{id:1,word:"IMPS",row:3,col:0,direction:"across"},{id:2,word:"EVEN",row:5,col:0,direction:"across"},{id:3,word:"EMPIRE",row:0,col:0,direction:"down"},{id:4,word:"LOOSEN",row:0,col:3,direction:"down"} ] },
   { day: 235, words: [ {id:0,word:"SEGMENT",row:0,col:0,direction:"across"},{id:1,word:"TOTS",row:3,col:0,direction:"across"},{id:2,word:"EVIL",row:5,col:0,direction:"across"},{id:3,word:"SOOTHE",row:0,col:0,direction:"down"},{id:4,word:"MUSSEL",row:0,col:3,direction:"down"} ] },
-  { day: 236, words: [ {id:0,word:"THERMAL",row:0,col:0,direction:"across"},{id:1,word:"KIBE",row:3,col:0,direction:"across"},{id:2,word:"EAST",row:5,col:0,direction:"across"},{id:3,word:"TACKLE",row:0,col:0,direction:"down"},{id:4,word:"REJECT",row:0,col:3,direction:"down"} ] },
+  { day: 236, words: [ {id:0,word:"THERMAL",row:0,col:0,direction:"across"},{id:1,word:"KITE",row:3,col:0,direction:"across"},{id:2,word:"EAST",row:5,col:0,direction:"across"},{id:3,word:"TACKLE",row:0,col:0,direction:"down"},{id:4,word:"REJECT",row:0,col:3,direction:"down"} ] },
   { day: 237, words: [ {id:0,word:"CONSUME",row:0,col:0,direction:"across"},{id:1,word:"VOLT",row:3,col:0,direction:"across"},{id:2,word:"YARN",row:5,col:0,direction:"across"},{id:3,word:"CONVEY",row:0,col:0,direction:"down"},{id:4,word:"SULTAN",row:0,col:3,direction:"down"} ] },
   { day: 238, words: [ {id:0,word:"BLOSSOM",row:0,col:0,direction:"across"},{id:1,word:"RIOT",row:3,col:0,direction:"across"},{id:2,word:"YORE",row:5,col:0,direction:"across"},{id:3,word:"BETRAY",row:0,col:0,direction:"down"},{id:4,word:"SOOTHE",row:0,col:3,direction:"down"} ] },
   { day: 239, words: [ {id:0,word:"PENSION",row:0,col:0,direction:"across"},{id:1,word:"REPO",row:3,col:0,direction:"across"},{id:2,word:"TWIG",row:5,col:0,direction:"across"},{id:3,word:"PARROT",row:0,col:0,direction:"down"},{id:4,word:"STRONG",row:0,col:3,direction:"down"} ] },
@@ -569,7 +590,7 @@ const DAILY_PUZZLES = [
   { day: 247, words: [ {id:0,word:"STUDENT",row:0,col:0,direction:"across"},{id:1,word:"IOTA",row:3,col:0,direction:"across"},{id:2,word:"EAST",row:5,col:0,direction:"across"},{id:3,word:"STRIVE",row:0,col:0,direction:"down"},{id:4,word:"DEPART",row:0,col:3,direction:"down"} ] },
   { day: 248, words: [ {id:0,word:"REALISE",row:0,col:0,direction:"across"},{id:1,word:"DEAD",row:3,col:0,direction:"across"},{id:2,word:"MOOR",row:5,col:0,direction:"across"},{id:3,word:"RANDOM",row:0,col:0,direction:"down"},{id:4,word:"LEADER",row:0,col:3,direction:"down"} ] },
   { day: 249, words: [ {id:0,word:"REBUILD",row:0,col:0,direction:"across"},{id:1,word:"KOLA",row:3,col:0,direction:"across"},{id:2,word:"TOUR",row:5,col:0,direction:"across"},{id:3,word:"RACKET",row:0,col:0,direction:"down"},{id:4,word:"UNFAIR",row:0,col:3,direction:"down"} ] },
-  { day: 250, words: [ {id:0,word:"ADDRESS",row:0,col:0,direction:"across"},{id:1,word:"EROS",row:3,col:0,direction:"across"},{id:2,word:"LION",row:5,col:0,direction:"across"},{id:3,word:"ANNEAL",row:0,col:0,direction:"down"},{id:4,word:"REASON",row:0,col:3,direction:"down"} ] },
+  { day: 250, words: [ {id:0,word:"ADDRESS",row:0,col:0,direction:"across"},{id:1,word:"EARS",row:3,col:0,direction:"across"},{id:2,word:"LION",row:5,col:0,direction:"across"},{id:3,word:"ANNEAL",row:0,col:0,direction:"down"},{id:4,word:"REASON",row:0,col:3,direction:"down"} ] },
   { day: 251, words: [ {id:0,word:"RELAXED",row:0,col:0,direction:"across"},{id:1,word:"BAKE",row:3,col:0,direction:"across"},{id:2,word:"ROOT",row:5,col:0,direction:"across"},{id:3,word:"RUBBER",row:0,col:0,direction:"down"},{id:4,word:"AFFECT",row:0,col:3,direction:"down"} ] },
   { day: 252, words: [ {id:0,word:"AMPLIFY",row:0,col:0,direction:"across"},{id:1,word:"AXIS",row:3,col:0,direction:"across"},{id:2,word:"NOON",row:5,col:0,direction:"across"},{id:3,word:"ATTAIN",row:0,col:0,direction:"down"},{id:4,word:"LESSEN",row:0,col:3,direction:"down"} ] },
   { day: 253, words: [ {id:0,word:"OPINION",row:0,col:0,direction:"across"},{id:1,word:"OAST",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"OPPOSE",row:0,col:0,direction:"down"},{id:4,word:"NATTER",row:0,col:3,direction:"down"} ] },
@@ -583,21 +604,21 @@ const DAILY_PUZZLES = [
   { day: 261, words: [ {id:0,word:"IMPLANT",row:0,col:0,direction:"across"},{id:1,word:"OGRE",row:3,col:0,direction:"across"},{id:2,word:"EDGY",row:5,col:0,direction:"across"},{id:3,word:"IMPOSE",row:0,col:0,direction:"down"},{id:4,word:"LIVELY",row:0,col:3,direction:"down"} ] },
   { day: 262, words: [ {id:0,word:"ORBITAL",row:0,col:0,direction:"across"},{id:1,word:"EASE",row:3,col:0,direction:"across"},{id:2,word:"LOST",row:5,col:0,direction:"across"},{id:3,word:"ORDEAL",row:0,col:0,direction:"down"},{id:4,word:"INSECT",row:0,col:3,direction:"down"} ] },
   { day: 263, words: [ {id:0,word:"NOTHING",row:0,col:0,direction:"across"},{id:1,word:"ROAR",row:3,col:0,direction:"across"},{id:2,word:"WITH",row:5,col:0,direction:"across"},{id:3,word:"NARROW",row:0,col:0,direction:"down"},{id:4,word:"HEARTH",row:0,col:3,direction:"down"} ] },
-  { day: 264, words: [ {id:0,word:"BARRIER",row:0,col:0,direction:"across"},{id:1,word:"KNOT",row:3,col:0,direction:"across"},{id:2,word:"NOME",row:5,col:0,direction:"across"},{id:3,word:"BECKON",row:0,col:0,direction:"down"},{id:4,word:"RUSTLE",row:0,col:3,direction:"down"} ] },
+  { day: 264, words: [ {id:0,word:"BARRIER",row:0,col:0,direction:"across"},{id:1,word:"KNOT",row:3,col:0,direction:"across"},{id:2,word:"NOTE",row:5,col:0,direction:"across"},{id:3,word:"BECKON",row:0,col:0,direction:"down"},{id:4,word:"RUSTLE",row:0,col:3,direction:"down"} ] },
   { day: 265, words: [ {id:0,word:"BAPTISE",row:0,col:0,direction:"across"},{id:1,word:"ORCA",row:3,col:0,direction:"across"},{id:2,word:"DISH",row:5,col:0,direction:"across"},{id:3,word:"BEYOND",row:0,col:0,direction:"down"},{id:4,word:"THRASH",row:0,col:3,direction:"down"} ] },
-  { day: 266, words: [ {id:0,word:"IMPROVE",row:0,col:0,direction:"across"},{id:1,word:"ORCA",row:3,col:0,direction:"across"},{id:2,word:"EGAD",row:5,col:0,direction:"across"},{id:3,word:"INCOME",row:0,col:0,direction:"down"},{id:4,word:"REGARD",row:0,col:3,direction:"down"} ] },
+  { day: 266, words: [ {id:0,word:"IMPROVE",row:0,col:0,direction:"across"},{id:1,word:"ORCA",row:3,col:0,direction:"across"},{id:2,word:"EYED",row:5,col:0,direction:"across"},{id:3,word:"INCOME",row:0,col:0,direction:"down"},{id:4,word:"REGARD",row:0,col:3,direction:"down"} ] },
   { day: 267, words: [ {id:0,word:"GLORIFY",row:0,col:0,direction:"across"},{id:1,word:"LULU",row:3,col:0,direction:"across"},{id:2,word:"YAWN",row:5,col:0,direction:"across"},{id:3,word:"GUILTY",row:0,col:0,direction:"down"},{id:4,word:"RETURN",row:0,col:3,direction:"down"} ] },
   { day: 268, words: [ {id:0,word:"TROUBLE",row:0,col:0,direction:"across"},{id:1,word:"TACO",row:3,col:0,direction:"across"},{id:2,word:"RACK",row:5,col:0,direction:"across"},{id:3,word:"TEETER",row:0,col:0,direction:"down"},{id:4,word:"UNLOCK",row:0,col:3,direction:"down"} ] },
   { day: 269, words: [ {id:0,word:"PERFORM",row:0,col:0,direction:"across"},{id:1,word:"FIST",row:3,col:0,direction:"across"},{id:2,word:"TORN",row:5,col:0,direction:"across"},{id:3,word:"PROFIT",row:0,col:0,direction:"down"},{id:4,word:"FATTEN",row:0,col:3,direction:"down"} ] },
-  { day: 270, words: [ {id:0,word:"REFEREE",row:0,col:0,direction:"across"},{id:1,word:"TOKE",row:3,col:0,direction:"across"},{id:2,word:"EGAD",row:5,col:0,direction:"across"},{id:3,word:"RUSTLE",row:0,col:0,direction:"down"},{id:4,word:"EXTEND",row:0,col:3,direction:"down"} ] },
+  { day: 270, words: [ {id:0,word:"REFEREE",row:0,col:0,direction:"across"},{id:1,word:"TOKE",row:3,col:0,direction:"across"},{id:2,word:"EYED",row:5,col:0,direction:"across"},{id:3,word:"RUSTLE",row:0,col:0,direction:"down"},{id:4,word:"EXTEND",row:0,col:3,direction:"down"} ] },
   { day: 271, words: [ {id:0,word:"ABSENCE",row:0,col:0,direction:"across"},{id:1,word:"IDLE",row:3,col:0,direction:"across"},{id:2,word:"GIRT",row:5,col:0,direction:"across"},{id:3,word:"AILING",row:0,col:0,direction:"down"},{id:4,word:"EXPERT",row:0,col:3,direction:"down"} ] },
   { day: 272, words: [ {id:0,word:"JUSTIFY",row:0,col:0,direction:"across"},{id:1,word:"GENE",row:3,col:0,direction:"across"},{id:2,word:"EVEN",row:5,col:0,direction:"across"},{id:3,word:"JUNGLE",row:0,col:0,direction:"down"},{id:4,word:"TAVERN",row:0,col:3,direction:"down"} ] },
-  { day: 273, words: [ {id:0,word:"CLUSTER",row:0,col:0,direction:"across"},{id:1,word:"TOUR",row:3,col:0,direction:"across"},{id:2,word:"MIRY",row:5,col:0,direction:"across"},{id:3,word:"CUSTOM",row:0,col:0,direction:"down"},{id:4,word:"STOREY",row:0,col:3,direction:"down"} ] },
+  { day: 273, words: [ {id:0,word:"CLUSTER",row:0,col:0,direction:"across"},{id:1,word:"TOUR",row:3,col:0,direction:"across"},{id:2,word:"MANY",row:5,col:0,direction:"across"},{id:3,word:"CUSTOM",row:0,col:0,direction:"down"},{id:4,word:"STOREY",row:0,col:3,direction:"down"} ] },
   { day: 274, words: [ {id:0,word:"EXHAUST",row:0,col:0,direction:"across"},{id:1,word:"BAIL",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"ENABLE",row:0,col:0,direction:"down"},{id:4,word:"ANTLER",row:0,col:3,direction:"down"} ] },
   { day: 275, words: [ {id:0,word:"STUMBLE",row:0,col:0,direction:"across"},{id:1,word:"READ",row:3,col:0,direction:"across"},{id:2,word:"THAW",row:5,col:0,direction:"across"},{id:3,word:"SECRET",row:0,col:0,direction:"down"},{id:4,word:"MEADOW",row:0,col:3,direction:"down"} ] },
   { day: 276, words: [ {id:0,word:"PROMOTE",row:0,col:0,direction:"across"},{id:1,word:"LOSS",row:3,col:0,direction:"across"},{id:2,word:"ROLL",row:5,col:0,direction:"across"},{id:3,word:"PILLAR",row:0,col:0,direction:"down"},{id:4,word:"MUSSEL",row:0,col:3,direction:"down"} ] },
-  { day: 277, words: [ {id:0,word:"EVIDENT",row:0,col:0,direction:"across"},{id:1,word:"ALSO",row:3,col:0,direction:"across"},{id:2,word:"KNUR",row:5,col:0,direction:"across"},{id:3,word:"EMBARK",row:0,col:0,direction:"down"},{id:4,word:"DEVOUR",row:0,col:3,direction:"down"} ] },
-  { day: 278, words: [ {id:0,word:"EXPLORE",row:0,col:0,direction:"across"},{id:1,word:"AIDE",row:3,col:0,direction:"across"},{id:2,word:"EMMY",row:5,col:0,direction:"across"},{id:3,word:"EFFACE",row:0,col:0,direction:"down"},{id:4,word:"LONELY",row:0,col:3,direction:"down"} ] },
+  { day: 277, words: [ {id:0,word:"EVIDENT",row:0,col:0,direction:"across"},{id:1,word:"INFO",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"ENTICE",row:0,col:0,direction:"down"},{id:4,word:"DEVOUR",row:0,col:3,direction:"down"} ] },
+  { day: 278, words: [ {id:0,word:"EXPLORE",row:0,col:0,direction:"across"},{id:1,word:"AIDE",row:3,col:0,direction:"across"},{id:2,word:"EASY",row:5,col:0,direction:"across"},{id:3,word:"EFFACE",row:0,col:0,direction:"down"},{id:4,word:"LONELY",row:0,col:3,direction:"down"} ] },
   { day: 279, words: [ {id:0,word:"FROSTED",row:0,col:0,direction:"across"},{id:1,word:"TARP",row:3,col:0,direction:"across"},{id:2,word:"RAKE",row:5,col:0,direction:"across"},{id:3,word:"FOSTER",row:0,col:0,direction:"down"},{id:4,word:"SIMPLE",row:0,col:3,direction:"down"} ] },
   { day: 280, words: [ {id:0,word:"WEATHER",row:0,col:0,direction:"across"},{id:1,word:"NORM",row:3,col:0,direction:"across"},{id:2,word:"YEAR",row:5,col:0,direction:"across"},{id:3,word:"WHINNY",row:0,col:0,direction:"down"},{id:4,word:"TREMOR",row:0,col:3,direction:"down"} ] },
   { day: 281, words: [ {id:0,word:"TESTIFY",row:0,col:0,direction:"across"},{id:1,word:"GASP",row:3,col:0,direction:"across"},{id:2,word:"ELSE",row:5,col:0,direction:"across"},{id:3,word:"TOGGLE",row:0,col:0,direction:"down"},{id:4,word:"TOPPLE",row:0,col:3,direction:"down"} ] },
@@ -607,7 +628,7 @@ const DAILY_PUZZLES = [
   { day: 285, words: [ {id:0,word:"CHAPTER",row:0,col:0,direction:"across"},{id:1,word:"KIND",row:3,col:0,direction:"across"},{id:2,word:"EDGE",row:5,col:0,direction:"across"},{id:3,word:"CACKLE",row:0,col:0,direction:"down"},{id:4,word:"PEDDLE",row:0,col:3,direction:"down"} ] },
   { day: 286, words: [ {id:0,word:"TEXTURE",row:0,col:0,direction:"across"},{id:1,word:"UNDO",row:3,col:0,direction:"across"},{id:2,word:"EARN",row:5,col:0,direction:"across"},{id:3,word:"TENURE",row:0,col:0,direction:"down"},{id:4,word:"TYCOON",row:0,col:3,direction:"down"} ] },
   { day: 287, words: [ {id:0,word:"ORIGINS",row:0,col:0,direction:"across"},{id:1,word:"ACID",row:3,col:0,direction:"across"},{id:2,word:"EVEN",row:5,col:0,direction:"across"},{id:3,word:"OBLATE",row:0,col:0,direction:"down"},{id:4,word:"GARDEN",row:0,col:3,direction:"down"} ] },
-  { day: 288, words: [ {id:0,word:"HYGIENE",row:0,col:0,direction:"across"},{id:1,word:"DEMO",row:3,col:0,direction:"across"},{id:2,word:"EIRE",row:5,col:0,direction:"across"},{id:3,word:"HANDLE",row:0,col:0,direction:"down"},{id:4,word:"INCOME",row:0,col:3,direction:"down"} ] },
+  { day: 288, words: [ {id:0,word:"HYGIENE",row:0,col:0,direction:"across"},{id:1,word:"DEMO",row:3,col:0,direction:"across"},{id:2,word:"EASE",row:5,col:0,direction:"across"},{id:3,word:"HANDLE",row:0,col:0,direction:"down"},{id:4,word:"INCOME",row:0,col:3,direction:"down"} ] },
   { day: 289, words: [ {id:0,word:"MODESTY",row:0,col:0,direction:"across"},{id:1,word:"GEAR",row:3,col:0,direction:"across"},{id:2,word:"ELSE",row:5,col:0,direction:"across"},{id:3,word:"MANGLE",row:0,col:0,direction:"down"},{id:4,word:"EMERGE",row:0,col:3,direction:"down"} ] },
   { day: 290, words: [ {id:0,word:"INSPIRE",row:0,col:0,direction:"across"},{id:1,word:"AXIS",row:3,col:0,direction:"across"},{id:2,word:"RICE",row:5,col:0,direction:"across"},{id:3,word:"IMPAIR",row:0,col:0,direction:"down"},{id:4,word:"PURSUE",row:0,col:3,direction:"down"} ] },
   { day: 291, words: [ {id:0,word:"APPROVE",row:0,col:0,direction:"across"},{id:1,word:"EXPO",row:3,col:0,direction:"across"},{id:2,word:"DOOM",row:5,col:0,direction:"across"},{id:3,word:"ASCEND",row:0,col:0,direction:"down"},{id:4,word:"REFORM",row:0,col:3,direction:"down"} ] },
@@ -630,7 +651,7 @@ const DAILY_PUZZLES = [
   { day: 308, words: [ {id:0,word:"MINIMAL",row:0,col:0,direction:"across"},{id:1,word:"KOLA",row:3,col:0,direction:"across"},{id:2,word:"YARD",row:5,col:0,direction:"across"},{id:3,word:"MONKEY",row:0,col:0,direction:"down"},{id:4,word:"ISLAND",row:0,col:3,direction:"down"} ] },
   { day: 309, words: [ {id:0,word:"PROMISE",row:0,col:0,direction:"across"},{id:1,word:"ROAD",row:3,col:0,direction:"across"},{id:2,word:"LOUR",row:5,col:0,direction:"across"},{id:3,word:"PETROL",row:0,col:0,direction:"down"},{id:4,word:"MURDER",row:0,col:3,direction:"down"} ] },
   { day: 310, words: [ {id:0,word:"CUTTING",row:0,col:0,direction:"across"},{id:1,word:"PICK",row:3,col:0,direction:"across"},{id:2,word:"LIFE",row:5,col:0,direction:"across"},{id:3,word:"COMPEL",row:0,col:0,direction:"down"},{id:4,word:"TACKLE",row:0,col:3,direction:"down"} ] },
-  { day: 311, words: [ {id:0,word:"DYNAMIC",row:0,col:0,direction:"across"},{id:1,word:"AURA",row:3,col:0,direction:"across"},{id:2,word:"NOEL",row:5,col:0,direction:"across"},{id:3,word:"DOMAIN",row:0,col:0,direction:"down"},{id:4,word:"ASSAIL",row:0,col:3,direction:"down"} ] },
+  { day: 311, words: [ {id:0,word:"DYNAMIC",row:0,col:0,direction:"across"},{id:1,word:"AURA",row:3,col:0,direction:"across"},{id:2,word:"NAIL",row:5,col:0,direction:"across"},{id:3,word:"DOMAIN",row:0,col:0,direction:"down"},{id:4,word:"ASSAIL",row:0,col:3,direction:"down"} ] },
   { day: 312, words: [ {id:0,word:"SETTING",row:0,col:0,direction:"across"},{id:1,word:"TAMP",row:3,col:0,direction:"across"},{id:2,word:"SLUR",row:5,col:0,direction:"across"},{id:3,word:"STATUS",row:0,col:0,direction:"down"},{id:4,word:"TAMPER",row:0,col:3,direction:"down"} ] },
   { day: 313, words: [ {id:0,word:"SKILFUL",row:0,col:0,direction:"across"},{id:1,word:"INKS",row:3,col:0,direction:"across"},{id:2,word:"EVEN",row:5,col:0,direction:"across"},{id:3,word:"STRIVE",row:0,col:0,direction:"down"},{id:4,word:"LOOSEN",row:0,col:3,direction:"down"} ] },
   { day: 314, words: [ {id:0,word:"SURFACE",row:0,col:0,direction:"across"},{id:1,word:"TWIG",row:3,col:0,direction:"across"},{id:2,word:"NEST",row:5,col:0,direction:"across"},{id:3,word:"SULTAN",row:0,col:0,direction:"down"},{id:4,word:"FLIGHT",row:0,col:3,direction:"down"} ] },
@@ -641,7 +662,7 @@ const DAILY_PUZZLES = [
   { day: 319, words: [ {id:0,word:"COLLECT",row:0,col:0,direction:"across"},{id:1,word:"DACE",row:3,col:0,direction:"across"},{id:2,word:"RACY",row:5,col:0,direction:"across"},{id:3,word:"CINDER",row:0,col:0,direction:"down"},{id:4,word:"LONELY",row:0,col:3,direction:"down"} ] },
   { day: 320, words: [ {id:0,word:"SOMEHOW",row:0,col:0,direction:"across"},{id:1,word:"AQUA",row:3,col:0,direction:"across"},{id:2,word:"YARD",row:5,col:0,direction:"across"},{id:3,word:"STEADY",row:0,col:0,direction:"down"},{id:4,word:"EXPAND",row:0,col:3,direction:"down"} ] },
   { day: 321, words: [ {id:0,word:"REFLECT",row:0,col:0,direction:"across"},{id:1,word:"ELMS",row:3,col:0,direction:"across"},{id:2,word:"LOIN",row:5,col:0,direction:"across"},{id:3,word:"REVEAL",row:0,col:0,direction:"down"},{id:4,word:"LESSEN",row:0,col:3,direction:"down"} ] },
-  { day: 322, words: [ {id:0,word:"GATEWAY",row:0,col:0,direction:"across"},{id:1,word:"TRIO",row:3,col:0,direction:"across"},{id:2,word:"EROS",row:5,col:0,direction:"across"},{id:3,word:"GENTLE",row:0,col:0,direction:"down"},{id:4,word:"EMBOSS",row:0,col:3,direction:"down"} ] },
+  { day: 322, words: [ {id:0,word:"GATEWAY",row:0,col:0,direction:"across"},{id:1,word:"TRIO",row:3,col:0,direction:"across"},{id:2,word:"EATS",row:5,col:0,direction:"across"},{id:3,word:"GENTLE",row:0,col:0,direction:"down"},{id:4,word:"EMBOSS",row:0,col:3,direction:"down"} ] },
   { day: 323, words: [ {id:0,word:"RELEASE",row:0,col:0,direction:"across"},{id:1,word:"DIRE",row:3,col:0,direction:"across"},{id:2,word:"EAST",row:5,col:0,direction:"across"},{id:3,word:"RIDDLE",row:0,col:0,direction:"down"},{id:4,word:"EXPECT",row:0,col:3,direction:"down"} ] },
   { day: 324, words: [ {id:0,word:"PRODUCE",row:0,col:0,direction:"across"},{id:1,word:"TUNA",row:3,col:0,direction:"across"},{id:2,word:"RIME",row:5,col:0,direction:"across"},{id:3,word:"POTTER",row:0,col:0,direction:"down"},{id:4,word:"DAMAGE",row:0,col:3,direction:"down"} ] },
   { day: 325, words: [ {id:0,word:"SHELTER",row:0,col:0,direction:"across"},{id:1,word:"INCH",row:3,col:0,direction:"across"},{id:2,word:"EVIL",row:5,col:0,direction:"across"},{id:3,word:"STRIFE",row:0,col:0,direction:"down"},{id:4,word:"LETHAL",row:0,col:3,direction:"down"} ] },
@@ -662,7 +683,7 @@ const DAILY_PUZZLES = [
   { day: 340, words: [ {id:0,word:"ORGANIC",row:0,col:0,direction:"across"},{id:1,word:"UNDO",row:3,col:0,direction:"across"},{id:2,word:"YEAR",row:5,col:0,direction:"across"},{id:3,word:"OCCUPY",row:0,col:0,direction:"down"},{id:4,word:"ARMOUR",row:0,col:3,direction:"down"} ] },
   { day: 341, words: [ {id:0,word:"IMPLORE",row:0,col:0,direction:"across"},{id:1,word:"ARMY",row:3,col:0,direction:"across"},{id:2,word:"ROAR",row:5,col:0,direction:"across"},{id:3,word:"IMPAIR",row:0,col:0,direction:"down"},{id:4,word:"LAWYER",row:0,col:3,direction:"down"} ] },
   { day: 342, words: [ {id:0,word:"FALSIFY",row:0,col:0,direction:"across"},{id:1,word:"BULL",row:3,col:0,direction:"across"},{id:2,word:"EVEN",row:5,col:0,direction:"across"},{id:3,word:"FUMBLE",row:0,col:0,direction:"down"},{id:4,word:"STOLEN",row:0,col:3,direction:"down"} ] },
-  { day: 343, words: [ {id:0,word:"HARVEST",row:0,col:0,direction:"across"},{id:1,word:"DART",row:3,col:0,direction:"across"},{id:2,word:"EIRE",row:5,col:0,direction:"across"},{id:3,word:"HURDLE",row:0,col:0,direction:"down"},{id:4,word:"VIRTUE",row:0,col:3,direction:"down"} ] },
+  { day: 343, words: [ {id:0,word:"HARVEST",row:0,col:0,direction:"across"},{id:1,word:"DART",row:3,col:0,direction:"across"},{id:2,word:"EASE",row:5,col:0,direction:"across"},{id:3,word:"HURDLE",row:0,col:0,direction:"down"},{id:4,word:"VIRTUE",row:0,col:3,direction:"down"} ] },
   { day: 344, words: [ {id:0,word:"ECLIPSE",row:0,col:0,direction:"across"},{id:1,word:"ELSE",row:3,col:0,direction:"across"},{id:2,word:"TRAD",row:5,col:0,direction:"across"},{id:3,word:"EXCEPT",row:0,col:0,direction:"down"},{id:4,word:"INDEED",row:0,col:3,direction:"down"} ] },
   { day: 345, words: [ {id:0,word:"CAREFUL",row:0,col:0,direction:"across"},{id:1,word:"ULNA",row:3,col:0,direction:"across"},{id:2,word:"NAPE",row:5,col:0,direction:"across"},{id:3,word:"COLUMN",row:0,col:0,direction:"down"},{id:4,word:"ESTATE",row:0,col:3,direction:"down"} ] },
   { day: 346, words: [ {id:0,word:"PRIVATE",row:0,col:0,direction:"across"},{id:1,word:"DUMB",row:3,col:0,direction:"across"},{id:2,word:"EARL",row:5,col:0,direction:"across"},{id:3,word:"PEDDLE",row:0,col:0,direction:"down"},{id:4,word:"VERBAL",row:0,col:3,direction:"down"} ] },
@@ -672,11 +693,11 @@ const DAILY_PUZZLES = [
   { day: 350, words: [ {id:0,word:"QUICKLY",row:0,col:0,direction:"across"},{id:1,word:"NOVA",row:3,col:0,direction:"across"},{id:2,word:"HINT",row:5,col:0,direction:"across"},{id:3,word:"QUENCH",row:0,col:0,direction:"down"},{id:4,word:"COBALT",row:0,col:3,direction:"down"} ] },
   { day: 351, words: [ {id:0,word:"WRESTLE",row:0,col:0,direction:"across"},{id:1,word:"EMIT",row:3,col:0,direction:"across"},{id:2,word:"EPIC",row:5,col:0,direction:"across"},{id:3,word:"WHEEZE",row:0,col:0,direction:"down"},{id:4,word:"STATIC",row:0,col:3,direction:"down"} ] },
   { day: 352, words: [ {id:0,word:"SOLDIER",row:0,col:0,direction:"across"},{id:1,word:"IOTA",row:3,col:0,direction:"across"},{id:2,word:"EDGE",row:5,col:0,direction:"across"},{id:3,word:"STRIFE",row:0,col:0,direction:"down"},{id:4,word:"DEBATE",row:0,col:3,direction:"down"} ] },
-  { day: 353, words: [ {id:0,word:"TENSION",row:0,col:0,direction:"across"},{id:1,word:"KOLA",row:3,col:0,direction:"across"},{id:2,word:"EELY",row:5,col:0,direction:"across"},{id:3,word:"TACKLE",row:0,col:0,direction:"down"},{id:4,word:"STEADY",row:0,col:3,direction:"down"} ] },
+  { day: 353, words: [ {id:0,word:"TENSION",row:0,col:0,direction:"across"},{id:1,word:"KOLA",row:3,col:0,direction:"across"},{id:2,word:"EASY",row:5,col:0,direction:"across"},{id:3,word:"TACKLE",row:0,col:0,direction:"down"},{id:4,word:"STEADY",row:0,col:3,direction:"down"} ] },
   { day: 354, words: [ {id:0,word:"COMBINE",row:0,col:0,direction:"across"},{id:1,word:"DACE",row:3,col:0,direction:"across"},{id:2,word:"TYPE",row:5,col:0,direction:"across"},{id:3,word:"CREDIT",row:0,col:0,direction:"down"},{id:4,word:"BREEZE",row:0,col:3,direction:"down"} ] },
   { day: 355, words: [ {id:0,word:"FOREIGN",row:0,col:0,direction:"across"},{id:1,word:"NOVA",row:3,col:0,direction:"across"},{id:2,word:"HOPE",row:5,col:0,direction:"across"},{id:3,word:"FLINCH",row:0,col:0,direction:"down"},{id:4,word:"EFFACE",row:0,col:3,direction:"down"} ] },
   { day: 356, words: [ {id:0,word:"MANAGED",row:0,col:0,direction:"across"},{id:1,word:"BONE",row:3,col:0,direction:"across"},{id:2,word:"EMIT",row:5,col:0,direction:"across"},{id:3,word:"MARBLE",row:0,col:0,direction:"down"},{id:4,word:"ACCENT",row:0,col:3,direction:"down"} ] },
-  { day: 357, words: [ {id:0,word:"EXPENSE",row:0,col:0,direction:"across"},{id:1,word:"AUTO",row:3,col:0,direction:"across"},{id:2,word:"EROS",row:5,col:0,direction:"across"},{id:3,word:"ESCAPE",row:0,col:0,direction:"down"},{id:4,word:"EMBOSS",row:0,col:3,direction:"down"} ] },
+  { day: 357, words: [ {id:0,word:"EXPENSE",row:0,col:0,direction:"across"},{id:1,word:"AUTO",row:3,col:0,direction:"across"},{id:2,word:"ENDS",row:5,col:0,direction:"across"},{id:3,word:"ESCAPE",row:0,col:0,direction:"down"},{id:4,word:"EMBOSS",row:0,col:3,direction:"down"} ] },
   { day: 358, words: [ {id:0,word:"CONSOLE",row:0,col:0,direction:"across"},{id:1,word:"WOLF",row:3,col:0,direction:"across"},{id:2,word:"BLUR",row:5,col:0,direction:"across"},{id:3,word:"COBWEB",row:0,col:0,direction:"down"},{id:4,word:"SUFFER",row:0,col:3,direction:"down"} ] },
   { day: 359, words: [ {id:0,word:"MIXTURE",row:0,col:0,direction:"across"},{id:1,word:"ATOM",row:3,col:0,direction:"across"},{id:2,word:"EVER",row:5,col:0,direction:"across"},{id:3,word:"MANAGE",row:0,col:0,direction:"down"},{id:4,word:"TREMOR",row:0,col:3,direction:"down"} ] },
   { day: 360, words: [ {id:0,word:"WARRANT",row:0,col:0,direction:"across"},{id:1,word:"NARC",row:3,col:0,direction:"across"},{id:2,word:"YORE",row:5,col:0,direction:"across"},{id:3,word:"WHINNY",row:0,col:0,direction:"down"},{id:4,word:"RESCUE",row:0,col:3,direction:"down"} ] },
@@ -1012,15 +1033,34 @@ function HowToPlay({ onClose }) {
 
 // ─── USERNAME SCREEN ─────────────────────────────────────────────────────────
 function UsernameScreen({ onSet }) {
-  const [value,   setValue]   = useState("");
-  const [error,   setError]   = useState("");
-  const [showHow, setShowHow] = useState(false);
+  const [value,    setValue]    = useState("");
+  const [error,    setError]    = useState("");
+  const [checking, setChecking] = useState(false);
+  const [showHow,  setShowHow]  = useState(false);
 
-  function submit() {
-    const name=value.trim();
-    if (!name)         { setError("Please enter a username"); return; }
-    if (name.length<2) { setError("At least 2 characters"); return; }
-    if (name.length>20){ setError("Max 20 characters"); return; }
+  async function submit() {
+    const name = value.trim();
+    if (!name)          { setError("Please enter a username"); return; }
+    if (name.length < 2){ setError("At least 2 characters"); return; }
+    if (name.length > 20){ setError("Max 20 characters"); return; }
+
+    setChecking(true);
+    setError("");
+    const deviceId = getDeviceId();
+    const status = await checkUsername(name, deviceId);
+
+    if (status === "taken") {
+      setError("That username is already taken — please choose another");
+      setChecking(false);
+      return;
+    }
+
+    if (status === "free") {
+      await registerUsername(name, deviceId);
+    }
+    // "yours" = they already own it, just let them back in
+
+    setChecking(false);
     onSet(name);
   }
 
@@ -1075,11 +1115,11 @@ function UsernameScreen({ onSet }) {
           }}
         />
         {error&&<div style={{fontSize:13,color:C.red,marginBottom:8,fontStyle:"italic"}}>{error}</div>}
-        <button onClick={submit} style={{
-          width:"100%",background:C.text,border:"none",borderRadius:10,
-          color:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
-          cursor:"pointer",fontFamily:"Georgia,serif",marginBottom:10,
-        }}>Let&#39;s Play →</button>
+        <button onClick={submit} disabled={checking} style={{
+          width:"100%",background:checking?C.accentLt:C.text,border:"none",borderRadius:10,
+          color:checking?C.textMid:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
+          cursor:checking?"default":"pointer",fontFamily:"Georgia,serif",marginBottom:10,
+        }}>{checking?"Checking...":"Let&#39;s Play →"}</button>
         <button onClick={()=>setShowHow(true)} style={{
           width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:10,
           color:C.textMid,padding:"11px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",

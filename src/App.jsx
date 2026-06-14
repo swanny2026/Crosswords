@@ -1077,7 +1077,7 @@ function UsernameScreen({ onSet }) {
         <div style={{fontSize:11,letterSpacing:"0.35em",color:C.textLight,textTransform:"uppercase",marginBottom:4}}>Word Puzzle</div>
         <div style={{fontSize:36,fontWeight:"bold",letterSpacing:"0.1em"}}>CROSSWORDS</div>
       </div>
-      <div style={{fontSize:12,color:C.textLight,marginBottom:20,letterSpacing:"0.1em",fontStyle:"italic"}}>est. 2025</div>
+      <div style={{fontSize:12,color:C.textLight,marginBottom:20,letterSpacing:"0.1em"}}></div>
 
       {/* Description */}
       <div style={{

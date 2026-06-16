@@ -1216,7 +1216,7 @@ function UsernameScreen({ onSet }) {
 }
 
 // ─── HOME SCREEN ─────────────────────────────────────────────────────────────
-function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderboard, onHowToPlay, onResetProgress, dailyDone }) {
+function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderboard, onHowToPlay, onResetProgress, onShareDaily, dailyDone }) {
   const todayKey = getTodayKey();
   const d = new Date();
   const dateStr = d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
@@ -1278,7 +1278,7 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
         <button onClick={dailyDone ? undefined : onDaily} disabled={dailyDone} style={{
           width:"100%",background:dailyDone?C.card:C.text,
           border:`2px solid ${dailyDone?C.border:C.text}`,
-          borderRadius:12,padding:"18px 20px",marginBottom:12,
+          borderRadius:12,padding:"18px 20px",marginBottom:dailyDone?6:12,
           color:dailyDone?C.textMid:C.bg,textAlign:"left",
           cursor:dailyDone?"default":"pointer",
           opacity:dailyDone?0.6:1,
@@ -1295,6 +1295,14 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
             <div style={{fontSize:32}}>📰</div>
           </div>
         </button>
+        {dailyDone && (
+          <button onClick={onShareDaily} style={{
+            width:"100%",background:"none",border:`1px solid ${C.border}`,
+            borderRadius:10,padding:"9px",color:C.textMid,
+            cursor:"pointer",fontFamily:"Georgia,serif",fontSize:13,
+            marginBottom:12,
+          }}>📤 Share your result</button>
+        )}
 
         {/* Regular Game */}
         <div style={{marginBottom:12}}>
@@ -1760,6 +1768,24 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
 }
 
 // ─── ROOT ────────────────────────────────────────────────────────────────────
+function DailyShareCard({ streak, onClose }) {
+  const saved = JSON.parse(localStorage.getItem("cw_daily_result")||"{}");
+  return (
+    <ShareCard
+      username=""
+      mode="daily"
+      level={0}
+      score={saved.score||0}
+      grade={saved.grade||""}
+      seconds={saved.seconds||0}
+      streak={streak}
+      puzzle={DAILY_PUZZLES[getDailyIndex()]}
+      revealed={new Set()}
+      onClose={onClose}
+    />
+  );
+}
+
 export default function Crosswords() {
   const [username, setUsername] = useState(()=>localStorage.getItem("cw_username")||"");
   const [screen,   setScreen]   = useState("home");
@@ -1790,6 +1816,7 @@ export default function Crosswords() {
     localStorage.setItem("cw_streak",String(newStreak));
     localStorage.setItem("cw_last_daily",todayKey);
     localStorage.setItem("cw_daily_done",todayKey);
+    localStorage.setItem("cw_daily_result", JSON.stringify({seconds, score: result.score, grade: result.grade}));
     setDailyDone(true);
     // Pass updated streak into result so win screen shows correct value
     result.streak = newStreak;
@@ -1807,7 +1834,11 @@ export default function Crosswords() {
     // Stay on game screen — Game component will re-render with new puzzle via key prop
   }
 
-  function handleResetProgress() {
+  const [showDailyShare, setShowDailyShare] = useState(false);
+
+  function handleShareDaily() {
+    setShowDailyShare(true);
+  }
     setCurrentLevel(1);
     localStorage.setItem("cw_level","1");
   }
@@ -1855,6 +1886,7 @@ export default function Crosswords() {
   return (
     <>
       {showHowToPlay && <HowToPlay onClose={()=>setShowHowToPlay(false)}/>}
+      {showDailyShare && <DailyShareCard streak={streak} onClose={()=>setShowDailyShare(false)}/>}
       <HomeScreen
         username={username}
         currentLevel={currentLevel}
@@ -1865,6 +1897,7 @@ export default function Crosswords() {
         onLeaderboard={()=>setScreen("leaderboard")}
         onHowToPlay={()=>setShowHowToPlay(true)}
         onResetProgress={handleResetProgress}
+        onShareDaily={handleShareDaily}
       />
 
       {/* Daily prompt overlay */}

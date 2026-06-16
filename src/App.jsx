@@ -1811,6 +1811,8 @@ export default function Crosswords() {
   if (screen==="leaderboard") return <Leaderboard onClose={()=>setScreen("home")}/>;
 
   if (screen==="daily") {
+    // Block if already completed today
+    if (dailyDone) { setScreen("home"); return null; }
     const idx = getDailyIndex();
     const dailyPuzzle = DAILY_PUZZLES[idx];
     return (

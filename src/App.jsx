@@ -1839,6 +1839,8 @@ export default function Crosswords() {
   function handleShareDaily() {
     setShowDailyShare(true);
   }
+
+  function handleResetProgress() {
     setCurrentLevel(1);
     localStorage.setItem("cw_level","1");
   }

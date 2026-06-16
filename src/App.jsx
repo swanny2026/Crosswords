@@ -856,15 +856,24 @@ function GridSilhouette({ puzzle, revealed }) {
 // ─── SHARE CARD ──────────────────────────────────────────────────────────────
 function ShareCard({ username, mode, level, score, grade, seconds, streak, puzzle, revealed, onClose }) {
   const fmt = s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-  const todayKey = getTodayKey();
-  const gradeEmoji = {A:"🏆",B:"⭐",C:"✅",D:"📖",E:"💪",F:"🎯"};
-  const modeLabel = mode==="daily" ? `Daily Challenge — ${todayKey}` : `Level ${level}`;
+
+  const d = new Date();
+  const dateStr = d.toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  const modeLabel = mode==="daily" ? `Daily Challenge — ${dateStr}` : `Level ${level}`;
   const streakLine = mode==="daily" && streak>0 ? `🔥 ${streak} day streak\n` : "";
-  const shareText = `🗞 CROSSWORDS\n${username} — ${modeLabel}\nScore: ${score}/100  Grade: ${grade} ${gradeEmoji[grade]||""}\n${streakLine}Time: ${fmt(seconds)}\nPlay at: ${window.location.href}`;
+
+  const shareText = [
+    `🗞 CROSSWORDS`,
+    `${modeLabel}`,
+    ``,
+    `⏱ ${fmt(seconds)}`,
+    streakLine.trim(),
+    `Play at: ${window.location.href}`,
+  ].filter(Boolean).join("\n");
 
   function share() {
     if (navigator.share) navigator.share({title:"Crosswords",text:shareText}).catch(()=>{});
-    else navigator.clipboard.writeText(shareText).then(()=>alert("Copied!"));
+    else navigator.clipboard.writeText(shareText).then(()=>alert("Copied to clipboard!"));
   }
 
   return (
@@ -877,25 +886,22 @@ function ShareCard({ username, mode, level, score, grade, seconds, streak, puzzl
         width:300,border:`2px solid ${C.borderDark}`,
         boxShadow:"0 20px 60px rgba(0,0,0,0.3)",
       }}>
-        <div style={{borderTop:`3px solid ${C.text}`,borderBottom:`3px solid ${C.text}`,padding:"6px 0",marginBottom:16}}>
+        {/* Header */}
+        <div style={{borderTop:`3px solid ${C.text}`,borderBottom:`3px solid ${C.text}`,padding:"6px 0",marginBottom:20}}>
           <div style={{fontSize:20,fontWeight:"bold",letterSpacing:"0.1em"}}>CROSSWORDS</div>
           <div style={{fontSize:11,color:C.textLight,letterSpacing:"0.2em",textTransform:"uppercase"}}>{modeLabel}</div>
         </div>
 
-        {/* Grid silhouette */}
-        <div style={{marginBottom:16,padding:8,background:C.card,borderRadius:10,border:`1px solid ${C.border}`}}>
-          <GridSilhouette puzzle={puzzle} revealed={revealed}/>
-        </div>
+        {/* Time — the only stat */}
+        <div style={{fontSize:56,fontWeight:"bold",color:C.text,lineHeight:1}}>{fmt(seconds)}</div>
+        <div style={{fontSize:12,color:C.textLight,marginTop:4,letterSpacing:"0.1em",textTransform:"uppercase"}}>completion time</div>
 
-        <div style={{fontSize:13,color:C.textLight,marginBottom:2}}>{username}</div>
         {mode==="daily" && streak>0 && (
-          <div style={{fontSize:15,color:C.gold,fontWeight:"bold",marginBottom:6}}>🔥 {streak} day streak</div>
+          <div style={{fontSize:14,color:C.gold,fontWeight:"bold",marginTop:12}}>🔥 {streak} day streak</div>
         )}
-        <div style={{fontSize:72,fontWeight:"bold",color:C.text,lineHeight:1}}>{grade}</div>
-        <div style={{fontSize:13,color:C.textMid,marginTop:4}}>{score}/100 · {fmt(seconds)}</div>
 
         <button onClick={share} style={{
-          marginTop:20,background:C.text,border:"none",borderRadius:10,
+          marginTop:24,background:C.text,border:"none",borderRadius:10,
           color:C.bg,padding:"12px 32px",fontSize:15,fontWeight:"bold",
           cursor:"pointer",width:"100%",fontFamily:"Georgia,serif",
         }}>Share 📤</button>

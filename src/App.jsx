@@ -29,6 +29,45 @@ async function fetchLeaderboard() {
   return dbRequest("GET", "scores?select=username,mode,level,seconds,score,streak,created_at&order=created_at.desc&limit=500");
 }
 
+// ─── PUSH NOTIFICATIONS ───────────────────────────────────────────────────────
+const VAPID_PUBLIC = "BPAsAy_RLyfS3nhaesjqoAksdbXhIpkqr5P-VPQEjNjsr6IOwEEv8lDaN0rIG9mucfTgiCAf5snd0XfDDXcZW7E";
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = "=".repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+async function subscribeToPush(username) {
+  try {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) return;
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+    const existing = await reg.pushManager.getSubscription();
+    const sub = existing || await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+    });
+    await dbRequest("POST", "subscriptions", { username, subscription: sub.toJSON() });
+    return true;
+  } catch (e) {
+    console.error("Push subscription failed:", e);
+    return false;
+  }
+}
+
+async function requestPushPermission(username) {
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") {
+    return subscribeToPush(username);
+  }
+  if (Notification.permission === "denied") return false;
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") return subscribeToPush(username);
+  return false;
+}
+
 // Returns "taken" | "yours" | "free"
 async function checkUsername(username, deviceId) {
   const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(username)}&select=device_id`);
@@ -1263,6 +1302,49 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
   );
 }
 
+// ─── PUSH PROMPT ─────────────────────────────────────────────────────────────
+function PushPrompt({ username }) {
+  const [state, setState] = useState("idle"); // idle | asking | done
+
+  async function handleEnable() {
+    setState("asking");
+    localStorage.setItem("cw_push_asked","1");
+    const ok = await requestPushPermission(username);
+    setState(ok ? "done" : "denied");
+  }
+
+  function handleDismiss() {
+    localStorage.setItem("cw_push_asked","1");
+    setState("done");
+  }
+
+  if (state === "done" || state === "denied") return null;
+
+  return (
+    <div style={{
+      background:C.card,border:`1px solid ${C.border}`,borderRadius:12,
+      padding:"14px 16px",marginTop:12,textAlign:"center",
+    }}>
+      <div style={{fontSize:22,marginBottom:6}}>🔔</div>
+      <div style={{fontSize:14,fontWeight:"bold",marginBottom:4}}>Never miss a daily challenge</div>
+      <div style={{fontSize:12,color:C.textMid,marginBottom:12}}>
+        Get a notification each day when the new puzzle drops
+      </div>
+      <div style={{display:"flex",gap:8}}>
+        <button onClick={handleDismiss} style={{
+          flex:1,background:"none",border:`1px solid ${C.border}`,borderRadius:8,
+          color:C.textMid,padding:"9px",fontSize:12,cursor:"pointer",fontFamily:"Georgia,serif",
+        }}>Not now</button>
+        <button onClick={handleEnable} disabled={state==="asking"} style={{
+          flex:2,background:C.text,border:"none",borderRadius:8,
+          color:C.bg,padding:"9px",fontSize:12,fontWeight:"bold",
+          cursor:"pointer",fontFamily:"Georgia,serif",
+        }}>{state==="asking" ? "Enabling..." : "Enable notifications"}</button>
+      </div>
+    </div>
+  );
+}
+
 // ─── GAME ────────────────────────────────────────────────────────────────────
 function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBack }) {
   const cellMap = buildCellMap(puzzle);
@@ -1595,6 +1677,10 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 <div style={{fontSize:72,fontWeight:"bold",color:C.text,lineHeight:1}}>{result.grade}</div>
                 <div style={{fontSize:22,color:C.text,marginTop:4}}>{result.score}<span style={{fontSize:14,color:C.textLight}}>/100</span></div>
                 <div style={{fontSize:13,color:C.textLight,marginTop:2,fontFamily:"monospace"}}>{fmt(result.seconds)}</div>
+                {/* Push notification opt-in — daily only, shown once */}
+                {isDaily && !localStorage.getItem("cw_push_asked") && (
+                  <PushPrompt username={username} />
+                )}
                 <div style={{display:"flex",gap:10,marginTop:20}}>
                   <button onClick={()=>setShowShare(true)} style={{
                     flex:1,background:C.card,border:`1px solid ${C.border}`,

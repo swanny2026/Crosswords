@@ -1728,7 +1728,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                   const pbKey = isDaily ? "cw_pb_daily" : "cw_pb_regular";
                   const prev = parseInt(localStorage.getItem(pbKey)||"999999");
                   const isNewPB = result && result.seconds <= prev;
-                  return isNewPB && prev < 999999 ? (
+                  return isNewPB ? (
                     <div style={{fontSize:13,color:"#2a9d8f",fontWeight:"bold",marginBottom:6,
                       background:"#e8f8f5",borderRadius:8,padding:"4px 12px",display:"inline-block"}}>
                       ⚡ New personal best!

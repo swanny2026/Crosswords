@@ -1273,24 +1273,13 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
           {streak>0&&<div style={{fontSize:14,color:C.gold,marginTop:4}}>🔥 {streak} day streak</div>}
           <div style={{fontSize:13,color:C.textLight,marginTop:4}}>Level {currentLevel} / 250</div>
           {(()=>{
-            const pbDaily   = localStorage.getItem("cw_pb_daily");
-            const pbRegular = localStorage.getItem("cw_pb_regular");
+            const pbDaily = localStorage.getItem("cw_pb_daily");
             const fmt = s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
-            if (!pbDaily && !pbRegular) return null;
+            if (!pbDaily) return null;
             return (
-              <div style={{display:"flex",justifyContent:"center",gap:20,marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`}}>
-                {pbDaily && (
-                  <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:11,color:C.textLight,textTransform:"uppercase",letterSpacing:"0.1em"}}>Daily PB</div>
-                    <div style={{fontSize:16,fontWeight:"bold",color:C.gold}}>⚡ {fmt(parseInt(pbDaily))}</div>
-                  </div>
-                )}
-                {pbRegular && (
-                  <div style={{textAlign:"center"}}>
-                    <div style={{fontSize:11,color:C.textLight,textTransform:"uppercase",letterSpacing:"0.1em"}}>Regular PB</div>
-                    <div style={{fontSize:16,fontWeight:"bold",color:C.gold}}>⚡ {fmt(parseInt(pbRegular))}</div>
-                  </div>
-                )}
+              <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,textAlign:"center"}}>
+                <div style={{fontSize:11,color:C.textLight,textTransform:"uppercase",letterSpacing:"0.1em"}}>Daily Challenge PB</div>
+                <div style={{fontSize:16,fontWeight:"bold",color:C.gold}}>⚡ {fmt(parseInt(pbDaily))}</div>
               </div>
             );
           })()}
@@ -1724,9 +1713,8 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                     ⭐ Perfect — no wrong guesses!
                   </div>
                 )}
-                {(()=>{
-                  const pbKey = isDaily ? "cw_pb_daily" : "cw_pb_regular";
-                  const prev = parseInt(localStorage.getItem(pbKey)||"999999");
+                {isDaily && (()=>{
+                  const prev = parseInt(localStorage.getItem("cw_pb_daily")||"999999");
                   const isNewPB = result && result.seconds <= prev;
                   return isNewPB ? (
                     <div style={{fontSize:13,color:"#2a9d8f",fontWeight:"bold",marginBottom:6,
@@ -1859,9 +1847,6 @@ export default function Crosswords() {
 
   function handleLevelComplete(result) {
     // Don't advance the level yet — wait until player taps Next
-    // Save regular game personal best
-    const prevBest = parseInt(localStorage.getItem("cw_pb_regular")||"999999");
-    if (result.seconds < prevBest) localStorage.setItem("cw_pb_regular", String(result.seconds));
   }
 
   function handleNextLevel() {

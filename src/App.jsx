@@ -1269,17 +1269,19 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
         </div>
 
         {/* Daily Challenge */}
-        <button onClick={onDaily} style={{
+        <button onClick={dailyDone ? undefined : onDaily} disabled={dailyDone} style={{
           width:"100%",background:dailyDone?C.card:C.text,
           border:`2px solid ${dailyDone?C.border:C.text}`,
           borderRadius:12,padding:"18px 20px",marginBottom:12,
-          color:dailyDone?C.textMid:C.bg,textAlign:"left",cursor:"pointer",
+          color:dailyDone?C.textMid:C.bg,textAlign:"left",
+          cursor:dailyDone?"default":"pointer",
+          opacity:dailyDone?0.6:1,
           fontFamily:"Georgia,serif",
         }}>
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
             <div>
               <div style={{fontSize:11,letterSpacing:"0.2em",textTransform:"uppercase",opacity:0.7,marginBottom:4}}>
-                {dailyDone?"✓ Completed":"Today"}
+                {dailyDone?"✓ Completed — come back tomorrow":"Today"}
               </div>
               <div style={{fontSize:20,fontWeight:"bold"}}>Daily Challenge</div>
               <div style={{fontSize:12,opacity:0.7,marginTop:2}}>{dateStr}</div>
@@ -1851,7 +1853,7 @@ export default function Crosswords() {
         streak={streak}
         dailyDone={dailyDone}
         onPlay={()=>setScreen("game")}
-        onDaily={()=>setScreen("daily")}
+        onDaily={()=>{ if (!dailyDone) setScreen("daily"); }}
         onLeaderboard={()=>setScreen("leaderboard")}
         onHowToPlay={()=>setShowHowToPlay(true)}
         onResetProgress={handleResetProgress}

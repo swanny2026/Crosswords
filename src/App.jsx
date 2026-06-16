@@ -1108,6 +1108,25 @@ function HowToPlay({ onClose }) {
 }
 
 // ─── USERNAME SCREEN ─────────────────────────────────────────────────────────
+const BANNED_WORDS_SUBSTRING = [
+  "fuck","shit","cunt","pussy","arse","twat","wank","bastard","bollocks",
+  "slut","whore","nigger","nigga","chink","faggot","retard","spastic",
+  "rape","pedo","paedo","nazi","hitler","porn","nude","naked","dildo",
+  "viagra","spunk","boobs",
+].map(w=>w.toLowerCase());
+
+// These are only banned as whole words to avoid blocking legitimate names
+const BANNED_WORDS_WHOLE = [
+  "ass","dick","cock","fag","cum","sex","tits","bitch","prick",
+].map(w=>w.toLowerCase());
+
+function containsBannedWord(name) {
+  const lower = name.toLowerCase();
+  if (BANNED_WORDS_SUBSTRING.some(w => lower.includes(w))) return true;
+  if (BANNED_WORDS_WHOLE.some(w => new RegExp(`\\b${w}\\b`).test(lower))) return true;
+  return false;
+}
+
 function UsernameScreen({ onSet }) {
   const [value,    setValue]    = useState("");
   const [error,    setError]    = useState("");
@@ -1119,6 +1138,7 @@ function UsernameScreen({ onSet }) {
     if (!name)           { setError("Please enter a username"); return; }
     if (name.length < 2) { setError("At least 2 characters"); return; }
     if (name.length > 20){ setError("Max 20 characters"); return; }
+    if (containsBannedWord(name)) { setError("Please choose an appropriate username"); return; }
 
     // Returning player — skip check entirely
     const savedName = localStorage.getItem("cw_username");

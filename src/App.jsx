@@ -975,7 +975,7 @@ function Leaderboard({ onClose }) {
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontWeight:"bold",fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.username}</div>
                   <div style={{fontSize:11,color:C.textLight}}>
-                    {tab==="today" ? `Score: ${u.score}/100 — Grade ${u.grade}` : `${u.count} puzzle${u.count!==1?"s":""} completed`}
+                    {tab==="today" ? `Score: ${u.score}/100` : `${u.count} puzzle${u.count!==1?"s":""} completed`}
                   </div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>

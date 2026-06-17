@@ -125,6 +125,22 @@ function getTodayKey() {
   return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 }
 
+// URL-based progress restore: ?restore=username,level,streak
+function checkRestoreParam() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const restore = params.get("restore");
+    if (!restore) return;
+    const [username, level, streak] = restore.split(",");
+    if (username) localStorage.setItem("cw_username", username);
+    if (level) localStorage.setItem("cw_level", level);
+    if (streak) localStorage.setItem("cw_streak", streak);
+    // Clean URL
+    window.history.replaceState({}, "", window.location.pathname);
+  } catch(e) {}
+}
+checkRestoreParam();
+
 // ─── PUZZLES ─────────────────────────────────────────────────────────────────
 const PUZZLES = [
   { level: 1, words: [   {id:0,word:"HEDGE",row:0,col:0,direction:"across"},{id:1,word:"IDEAL",row:2,col:0,direction:"across"},{id:2,word:"TASTE",row:4,col:0,direction:"across"},{id:3,word:"HEIST",row:0,col:0,direction:"down"},{id:4,word:"DRESS",row:0,col:2,direction:"down"}   ] },
@@ -887,7 +903,7 @@ function ShareCard({ username, mode, level, score, grade, seconds, streak, puzzl
         boxShadow:"0 20px 60px rgba(0,0,0,0.3)",
       }}>
         {/* Header */}
-        <div style={{borderTop:`3px solid ${C.text}`,borderBottom:`3px solid ${C.text}`,padding:"6px 0",marginBottom:20}}>
+        <div style={{borderTop:`3px solid ${C.text}`,borderBottom:`3px solid ${C.text}`,padding:"6px 0",marginBottom:16,textAlign:"center"}}>
           <div style={{fontSize:20,fontWeight:"bold",letterSpacing:"0.1em"}}>CROSSWORDS</div>
           <div style={{fontSize:11,color:C.textLight,letterSpacing:"0.2em",textTransform:"uppercase"}}>{modeLabel}</div>
         </div>

@@ -1022,9 +1022,12 @@ function Leaderboard({ onClose }) {
           </div>
         ) : (
           <div style={{display:"flex",flexDirection:"column",gap:8}}>
-            {displayList.map((u,i)=>(
+            {displayList.map((u,i)=>{
+              const isMe = u.username === localStorage.getItem("cw_username");
+              return (
               <div key={u.username} style={{
-                background:C.card,border:`1px solid ${i<3?C.borderDark:C.border}`,
+                background: isMe ? C.goldLt : C.card,
+                border:`1px solid ${isMe ? C.gold : i<3 ? C.borderDark : C.border}`,
                 borderRadius:10,padding:"12px 16px",
                 display:"flex",alignItems:"center",gap:12,
               }}>
@@ -1034,7 +1037,9 @@ function Leaderboard({ onClose }) {
                   fontSize:12,fontWeight:"bold",color:medalText(i),flexShrink:0,
                 }}>{i+1}</div>
                 <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:"bold",fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{u.username}</div>
+                  <div style={{fontWeight:"bold",fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                    {u.username}{isMe && <span style={{fontSize:11,color:C.gold,marginLeft:6}}>← you</span>}
+                  </div>
                   <div style={{fontSize:11,color:C.textLight}}>
                     {tab==="today" ? `Score: ${u.score}/100` : `${u.count} puzzle${u.count!==1?"s":""} completed`}
                   </div>
@@ -1048,7 +1053,8 @@ function Leaderboard({ onClose }) {
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

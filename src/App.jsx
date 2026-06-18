@@ -1537,6 +1537,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
     if (newGuessed.size!==puzzle.words.length) return;
     revealAll();
     setGameState("won");
+    soundCompletion();
     const score=calcScore(seconds);
     const grade=getGrade(score);
     const res={score,grade,seconds,perfect:isPerfect&&!hintUsed};
@@ -1563,6 +1564,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
       setRevealed(newRevealed);
       pulseKeys(hits);
       setCorrectLetters(prev=>new Set([...prev,letter]));
+      soundCorrectLetter();
       const completed=checkCompletedWords(newRevealed,guessedWords);
       if (completed.length>0) {
         const newGuessed=new Set([...guessedWords,...completed.map(w=>w.id)]);

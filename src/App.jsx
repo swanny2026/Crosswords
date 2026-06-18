@@ -1,5 +1,40 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
+// ─── SOUNDS ──────────────────────────────────────────────────────────────────
+function playTone(ac, freq, start, duration, type='sine', gain=0.3) {
+  try {
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.connect(g);
+    g.connect(ac.destination);
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ac.currentTime + start);
+    g.gain.setValueAtTime(0, ac.currentTime + start);
+    g.gain.linearRampToValueAtTime(gain, ac.currentTime + start + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + start + duration);
+    osc.start(ac.currentTime + start);
+    osc.stop(ac.currentTime + start + duration + 0.1);
+  } catch(e) {}
+}
+
+function soundCorrectLetter() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    playTone(ac, 660, 0,    0.06, 'sine', 0.2);
+    playTone(ac, 880, 0.05, 0.1,  'sine', 0.15);
+  } catch(e) {}
+}
+
+function soundCompletion() {
+  try {
+    const ac = new (window.AudioContext || window.webkitAudioContext)();
+    playTone(ac, 880,  0,    0.1,  'sine', 0.4);
+    playTone(ac, 1108, 0.08, 0.15, 'sine', 0.35);
+    playTone(ac, 1318, 0.18, 0.4,  'sine', 0.3);
+    playTone(ac, 1760, 0.18, 0.3,  'sine', 0.15);
+  } catch(e) {}
+}
+
 // ─── SUPABASE ────────────────────────────────────────────────────────────────
 const SUPABASE_URL = "https://pprypxcjbeeuagfsfnwe.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwcnlweGNqYmVldWFnZnNmbndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MDc5NTAsImV4cCI6MjA5Njk4Mzk1MH0.lERWI7-Ce5Zf-Y2v2LqoWYNfMJa3b9AXEqQruwpF3TA";

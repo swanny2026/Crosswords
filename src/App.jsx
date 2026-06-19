@@ -206,11 +206,27 @@ async function saveProgressToCloud(username, level, streak, lastDaily, dailyDone
   } catch(e) {}
 }
 
-async function loadProgressFromCloud(deviceId) {
+async function loadProgressFromCloud(username) {
   try {
-    const rows = await dbRequest("GET", `players?device_id=eq.${encodeURIComponent(deviceId)}&select=username,level,streak,last_daily,daily_done&limit=1`);
-    if (rows && rows.length > 0) return rows[0];
-    return null;
+    // Get highest level from scores
+    const scores = await dbRequest("GET", 
+      `scores?username=eq.${encodeURIComponent(username)}&select=level,streak,mode&order=created_at.desc&limit=100`
+    );
+    if (!scores || scores.length === 0) return null;
+    
+    // Get highest regular game level
+    const regularScores = scores.filter(s => s.mode === "regular");
+    const maxLevel = regularScores.length > 0 
+      ? Math.max(...regularScores.map(s => parseInt(s.level)||1)) + 1
+      : 1;
+    
+    // Get highest streak
+    const maxStreak = Math.max(...scores.map(s => parseInt(s.streak)||0));
+    
+    return {
+      level: Math.min(maxLevel, 250),
+      streak: maxStreak,
+    };
   } catch(e) { return null; }
 }
 
@@ -1388,17 +1404,16 @@ function UsernameScreen({ onSet }) {
               const ok = await verifyPin(pinUsername, pinValue);
               if (ok) {
                 await updateDeviceId(pinUsername, getDeviceId());
-                // Load progress from cloud
-                const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(pinUsername)}&select=level,streak,last_daily,daily_done&limit=1`);
-                if (rows && rows.length > 0) {
-                  const { level, streak, last_daily, daily_done } = rows[0];
-                  if (level) { localStorage.setItem("cw_level", String(level)); }
-                  if (streak) { localStorage.setItem("cw_streak", String(streak)); }
-                  if (last_daily) localStorage.setItem("cw_last_daily", last_daily);
-                  if (daily_done) localStorage.setItem("cw_daily_done", daily_done);
+                // Load progress from scores table
+                const progress = await loadProgressFromCloud(pinUsername);
+                if (progress) {
+                  if (progress.level) localStorage.setItem("cw_level", String(progress.level));
+                  if (progress.streak) localStorage.setItem("cw_streak", String(progress.streak));
                 }
+                localStorage.setItem("cw_username", pinUsername);
                 setChecking(false);
-                onSet(pinUsername);
+                // Reload to pick up all restored values fresh
+                window.location.reload();
               } else {
                 setError("Incorrect PIN — please try again");
                 setChecking(false);
@@ -2134,26 +2149,29 @@ export default function Crosswords() {
   useEffect(()=>{
     async function tryCloudRestore() {
       const deviceId = getDeviceId();
-      const progress = await loadProgressFromCloud(deviceId);
+      // Find username by device ID
+      const playerRows = await dbRequest("GET", `players?device_id=eq.${encodeURIComponent(deviceId)}&select=username,pin&limit=1`);
+      const cloudUsername = playerRows && playerRows.length > 0 ? playerRows[0].username : null;
+      const nameToUse = cloudUsername || username;
+      if (!nameToUse) return;
+
+      // Set username if not already set
+      if (cloudUsername && !localStorage.getItem("cw_username")) {
+        localStorage.setItem("cw_username", cloudUsername);
+        setUsername(cloudUsername);
+      }
+
+      // Load progress from scores table
+      const progress = await loadProgressFromCloud(nameToUse);
       if (!progress) return;
-      const { username: u, level, streak: s, last_daily, daily_done } = progress;
-      if (u && !localStorage.getItem("cw_username")) {
-        localStorage.setItem("cw_username", u);
-        setUsername(u);
+
+      if (progress.level && progress.level > parseInt(localStorage.getItem("cw_level")||"1")) {
+        localStorage.setItem("cw_level", String(progress.level));
+        setCurrentLevel(progress.level);
       }
-      if (level && parseInt(level) > parseInt(localStorage.getItem("cw_level")||"1")) {
-        const lvl = Math.min(Math.max(parseInt(level), 1), 250);
-        localStorage.setItem("cw_level", String(lvl));
-        setCurrentLevel(lvl);
-      }
-      if (s && parseInt(s) > parseInt(localStorage.getItem("cw_streak")||"0")) {
-        localStorage.setItem("cw_streak", String(s));
-        setStreak(parseInt(s));
-      }
-      if (last_daily) localStorage.setItem("cw_last_daily", last_daily);
-      if (daily_done) {
-        localStorage.setItem("cw_daily_done", daily_done);
-        setDailyDone(daily_done === getTodayKey());
+      if (progress.streak && progress.streak > parseInt(localStorage.getItem("cw_streak")||"0")) {
+        localStorage.setItem("cw_streak", String(progress.streak));
+        setStreak(progress.streak);
       }
     }
     tryCloudRestore();

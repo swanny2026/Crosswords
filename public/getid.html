@@ -24,11 +24,13 @@ const localId = localStorage.getItem('cw_device_id');
 const username = localStorage.getItem('cw_username');
 const level = localStorage.getItem('cw_level');
 const streak = localStorage.getItem('cw_streak');
+const pinSet = localStorage.getItem('cw_pin_set');
 
 document.getElementById('info').innerHTML = `
   <b>Username:</b> ${username || 'none'}<br>
   <b>Level:</b> ${level || 'none'}<br>
-  <b>Streak:</b> ${streak || 'none'}<br><br>
+  <b>Streak:</b> ${streak || 'none'}<br>
+  <b>PIN set:</b> ${pinSet || 'none'}<br><br>
   <b>Cookie ID:</b> ${cookieId || 'none'}<br>
   <b>LocalStorage ID:</b> ${localId || 'none'}
 `;

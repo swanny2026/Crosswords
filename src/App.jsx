@@ -2153,6 +2153,7 @@ export default function Crosswords() {
       // Find username by device ID
       const playerRows = await dbRequest("GET", `players?device_id=eq.${encodeURIComponent(deviceId)}&select=username,pin&limit=1`);
       const cloudUsername = playerRows && playerRows.length > 0 ? playerRows[0].username : null;
+      const cloudPin = playerRows && playerRows.length > 0 ? playerRows[0].pin : null;
       const nameToUse = cloudUsername || username;
       if (!nameToUse) return;
 
@@ -2160,6 +2161,11 @@ export default function Crosswords() {
       if (cloudUsername && !localStorage.getItem("cw_username")) {
         localStorage.setItem("cw_username", cloudUsername);
         setUsername(cloudUsername);
+      }
+
+      // Mark PIN as set if one exists in the database
+      if (cloudPin && !localStorage.getItem("cw_pin_set")) {
+        localStorage.setItem("cw_pin_set", "1");
       }
 
       // Load progress from scores table

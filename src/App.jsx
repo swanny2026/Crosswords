@@ -1388,6 +1388,15 @@ function UsernameScreen({ onSet }) {
               const ok = await verifyPin(pinUsername, pinValue);
               if (ok) {
                 await updateDeviceId(pinUsername, getDeviceId());
+                // Load progress from cloud
+                const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(pinUsername)}&select=level,streak,last_daily,daily_done&limit=1`);
+                if (rows && rows.length > 0) {
+                  const { level, streak, last_daily, daily_done } = rows[0];
+                  if (level) { localStorage.setItem("cw_level", String(level)); }
+                  if (streak) { localStorage.setItem("cw_streak", String(streak)); }
+                  if (last_daily) localStorage.setItem("cw_last_daily", last_daily);
+                  if (daily_done) localStorage.setItem("cw_daily_done", daily_done);
+                }
                 setChecking(false);
                 onSet(pinUsername);
               } else {

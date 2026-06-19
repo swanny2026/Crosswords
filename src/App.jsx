@@ -60,20 +60,24 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 async function dbRequest(method, path, body, extraHeaders={}) {
   try {
+    const prefer = method === "POST" ? "return=representation,resolution=merge-duplicates" 
+                 : method === "PATCH" ? "return=representation"
+                 : "";
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
       method,
       headers: {
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY,
         "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Prefer": method === "POST" ? "return=representation,resolution=merge-duplicates" : "",
+        ...(prefer ? {"Prefer": prefer} : {}),
         ...extraHeaders,
       },
       body: body ? JSON.stringify(body) : undefined,
     });
     const text = await res.text();
+    if (!res.ok) console.error("DB error:", res.status, text);
     return text ? JSON.parse(text) : null;
-  } catch { return null; }
+  } catch(e) { console.error("DB request failed:", e); return null; }
 }
 
 async function submitScore(data) {
@@ -179,19 +183,26 @@ function getDeviceId() {
 
 // ─── SUPABASE PROGRESS SYNC ──────────────────────────────────────────────────
 async function saveProgressToCloud(username, level, streak, lastDaily, dailyDone) {
+  if (!username) return;
   try {
     const deviceId = getDeviceId();
-    // First try to update existing row
-    const updateRes = await dbRequest("PATCH",
-      `players?username=eq.${encodeURIComponent(username)}`,
-      { device_id: deviceId, level: level||1, streak: streak||0, last_daily: lastDaily||null, daily_done: dailyDone||null }
-    );
-    // If no row existed, insert
-    if (!updateRes || (Array.isArray(updateRes) && updateRes.length === 0)) {
-      await dbRequest("POST", "players",
-        { username, device_id: deviceId, level: level||1, streak: streak||0, last_daily: lastDaily||null, daily_done: dailyDone||null }
-      );
-    }
+    await fetch(`${SUPABASE_URL}/rest/v1/players`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": SUPABASE_KEY,
+        "Authorization": `Bearer ${SUPABASE_KEY}`,
+        "Prefer": "resolution=merge-duplicates,return=minimal",
+      },
+      body: JSON.stringify({
+        username,
+        device_id: deviceId,
+        level: level || 1,
+        streak: streak || 0,
+        last_daily: lastDaily || null,
+        daily_done: dailyDone || null,
+      }),
+    });
   } catch(e) {}
 }
 

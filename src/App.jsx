@@ -1617,12 +1617,12 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
               borderRadius:10,padding:"9px",color:C.textLight,
               cursor:"pointer",fontFamily:"Georgia,serif",fontSize:12,
             }}>↩ Reset progress to Level 1</button>
-            <button onClick={onSetPin} style={{
-              width:"100%",background:"none",border:`1px solid ${C.border}`,
-              borderRadius:10,padding:"9px",color:C.textLight,
-              cursor:"pointer",fontFamily:"Georgia,serif",fontSize:12,marginTop:6,
-            }}>🔐 {localStorage.getItem("cw_pin_set") ? "Change PIN" : "Set recovery PIN"}</button>
           )}
+          <button onClick={onSetPin} style={{
+            width:"100%",background:"none",border:`1px solid ${C.border}`,
+            borderRadius:10,padding:"9px",color:C.textLight,
+            cursor:"pointer",fontFamily:"Georgia,serif",fontSize:12,marginTop:6,
+          }}>🔐 {localStorage.getItem("cw_pin_set") ? "Change PIN" : "Set recovery PIN"}</button>
         </div>
 
         {/* Bottom row */}

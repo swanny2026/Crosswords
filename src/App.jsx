@@ -2024,7 +2024,6 @@ export default function Crosswords() {
     // Save to cloud
     saveProgressToCloud(username, currentLevel, newStreak, todayKey, todayKey);
   }
-  }
 
   function handleLevelComplete(result) {
     // Don't advance the level yet — wait until player taps Next

@@ -1686,7 +1686,38 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
   );
 }
 
-// ─── PUSH PROMPT ─────────────────────────────────────────────────────────────
+// ─── PUSH PROMPT CHECK ───────────────────────────────────────────────────────
+function PushPromptCheck({ username }) {
+  const [show, setShow] = useState(false);
+
+  useEffect(()=>{
+    async function check() {
+      // Check if already subscribed in Supabase
+      try {
+        const rows = await dbRequest("GET", `subscriptions?username=eq.${encodeURIComponent(username)}&select=id&limit=1`);
+        if (rows && rows.length > 0) {
+          // Already subscribed — mark as asked and don't show
+          localStorage.setItem("cw_push_asked", "1");
+          return;
+        }
+      } catch(e) {}
+      // Also check browser permission
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        localStorage.setItem("cw_push_asked", "1");
+        return;
+      }
+      if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+        localStorage.setItem("cw_push_asked", "1");
+        return;
+      }
+      setShow(true);
+    }
+    check();
+  }, [username]);
+
+  if (!show) return null;
+  return <PushPrompt username={username} />;
+}
 function PushPrompt({ username }) {
   const [state, setState] = useState("idle"); // idle | asking | done
 
@@ -2075,7 +2106,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 <div style={{fontSize:13,color:C.textLight,marginTop:2,fontFamily:"monospace"}}>{fmt(result.seconds)}</div>
                 {/* Push notification opt-in — daily only, shown once */}
                 {isDaily && !localStorage.getItem("cw_push_asked") && (
-                  <PushPrompt username={username} />
+                  <PushPromptCheck username={username} />
                 )}
                 <div style={{display:"flex",gap:10,marginTop:20}}>
                   <button onClick={()=>setShowShare(true)} style={{

@@ -58,7 +58,7 @@ function soundCompletion() {
 const SUPABASE_URL = "https://pprypxcjbeeuagfsfnwe.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBwcnlweGNqYmVldWFnZnNmbndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE0MDc5NTAsImV4cCI6MjA5Njk4Mzk1MH0.lERWI7-Ce5Zf-Y2v2LqoWYNfMJa3b9AXEqQruwpF3TA";
 
-async function dbRequest(method, path, body) {
+async function dbRequest(method, path, body, extraHeaders={}) {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
       method,
@@ -66,7 +66,8 @@ async function dbRequest(method, path, body) {
         "Content-Type": "application/json",
         "apikey": SUPABASE_KEY,
         "Authorization": `Bearer ${SUPABASE_KEY}`,
-        "Prefer": method === "POST" ? "return=representation" : "",
+        "Prefer": method === "POST" ? "return=representation,resolution=merge-duplicates" : "",
+        ...extraHeaders,
       },
       body: body ? JSON.stringify(body) : undefined,
     });
@@ -127,6 +128,7 @@ async function checkUsername(username, deviceId) {
   const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(username)}&select=device_id`);
   if (!rows || rows.length === 0) return "free";
   if (rows[0].device_id === deviceId) return "yours";
+  if (rows[0].device_id === "pre-existing") return "yours"; // legacy entries
   return "taken";
 }
 
@@ -134,13 +136,54 @@ async function registerUsername(username, deviceId) {
   return dbRequest("POST", "players", { username, device_id: deviceId });
 }
 
+// ─── COOKIE-BASED DEVICE ID ──────────────────────────────────────────────────
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+}
+
+function setCookie(name, value, days=365*5) {
+  const expires = new Date(Date.now() + days*24*60*60*1000).toUTCString();
+  document.cookie = `${name}=${value};expires=${expires};path=/;SameSite=Lax`;
+}
+
 function getDeviceId() {
-  let id = localStorage.getItem("cw_device_id");
+  // Try cookie first (survives bookmark deletion)
+  let id = getCookie("cw_device_id");
+  if (!id) {
+    // Fall back to localStorage for existing users
+    id = localStorage.getItem("cw_device_id");
+  }
   if (!id) {
     id = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-    localStorage.setItem("cw_device_id", id);
   }
+  // Always save to both cookie and localStorage
+  setCookie("cw_device_id", id);
+  localStorage.setItem("cw_device_id", id);
   return id;
+}
+
+// ─── SUPABASE PROGRESS SYNC ──────────────────────────────────────────────────
+async function saveProgressToCloud(username, level, streak, lastDaily, dailyDone) {
+  try {
+    const deviceId = getDeviceId();
+    await dbRequest("POST", "players", {
+      username,
+      device_id: deviceId,
+      level: level || 1,
+      streak: streak || 0,
+      last_daily: lastDaily || null,
+      daily_done: dailyDone || null,
+    }, {"Prefer": "resolution=merge-duplicates"});
+  } catch(e) {}
+}
+
+async function loadProgressFromCloud(deviceId) {
+  try {
+    const rows = await dbRequest("GET", `players?device_id=eq.${encodeURIComponent(deviceId)}&select=username,level,streak,last_daily,daily_done&limit=1`);
+    if (rows && rows.length > 0) return rows[0];
+    return null;
+  } catch(e) { return null; }
 }
 
 // ─── SCORING ─────────────────────────────────────────────────────────────────
@@ -1916,15 +1959,50 @@ export default function Crosswords() {
   const [showDailyPrompt, setShowDailyPrompt] = useState(false);
   const [showHowToPlay,   setShowHowToPlay]   = useState(false);
 
+  // On first load — try to restore progress from cloud via device ID
+  useEffect(()=>{
+    async function tryCloudRestore() {
+      if (username) return; // already logged in
+      const deviceId = getDeviceId();
+      const progress = await loadProgressFromCloud(deviceId);
+      if (!progress) return;
+      // Restore from cloud
+      const { username: u, level, streak: s, last_daily, daily_done } = progress;
+      if (u) {
+        localStorage.setItem("cw_username", u);
+        setUsername(u);
+      }
+      if (level) {
+        const lvl = Math.min(Math.max(parseInt(level)||1, 1), 250);
+        localStorage.setItem("cw_level", String(lvl));
+        setCurrentLevel(lvl);
+      }
+      if (s) {
+        localStorage.setItem("cw_streak", String(s));
+        setStreak(parseInt(s));
+      }
+      if (last_daily) localStorage.setItem("cw_last_daily", last_daily);
+      if (daily_done) {
+        localStorage.setItem("cw_daily_done", daily_done);
+        setDailyDone(daily_done === getTodayKey());
+      }
+    }
+    tryCloudRestore();
+  }, []);
+
   // On first load after username set, prompt for daily if not done
   useEffect(()=>{
     if (username && !dailyDone && screen==="home") setShowDailyPrompt(true);
   },[username]);
 
   function handleUsernameSet(name) {
-    localStorage.setItem("cw_username",name);
+    localStorage.setItem("cw_username", name);
     setUsername(name);
     if (!dailyDone) setShowDailyPrompt(true);
+    // Save to cloud
+    saveProgressToCloud(name, currentLevel, streak,
+      localStorage.getItem("cw_last_daily"),
+      localStorage.getItem("cw_daily_done"));
   }
 
   function handleDailyComplete(result) {
@@ -1934,15 +2012,18 @@ export default function Crosswords() {
     const yesterdayKey = `${yesterday.getFullYear()}-${yesterday.getMonth()+1}-${yesterday.getDate()}`;
     const newStreak = (lastDay===yesterdayKey || lastDay===todayKey) ? streak+1 : 1;
     setStreak(newStreak);
-    localStorage.setItem("cw_streak",String(newStreak));
-    localStorage.setItem("cw_last_daily",todayKey);
-    localStorage.setItem("cw_daily_done",todayKey);
+    localStorage.setItem("cw_streak", String(newStreak));
+    localStorage.setItem("cw_last_daily", todayKey);
+    localStorage.setItem("cw_daily_done", todayKey);
     localStorage.setItem("cw_daily_result", JSON.stringify({seconds: result.seconds, score: result.score, grade: result.grade}));
     setDailyDone(true);
     result.streak = newStreak;
     // Save daily personal best
     const prevBest = parseInt(localStorage.getItem("cw_pb_daily")||"999999");
     if (result.seconds < prevBest) localStorage.setItem("cw_pb_daily", String(result.seconds));
+    // Save to cloud
+    saveProgressToCloud(username, currentLevel, newStreak, todayKey, todayKey);
+  }
   }
 
   function handleLevelComplete(result) {
@@ -1953,7 +2034,9 @@ export default function Crosswords() {
     const next = Math.min(currentLevel+1,250);
     setCurrentLevel(next);
     localStorage.setItem("cw_level",String(next));
-    // Stay on game screen — Game component will re-render with new puzzle via key prop
+    saveProgressToCloud(username, next, streak,
+      localStorage.getItem("cw_last_daily"),
+      localStorage.getItem("cw_daily_done"));
   }
 
   const [showDailyShare, setShowDailyShare] = useState(false);

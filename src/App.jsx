@@ -1411,6 +1411,7 @@ function UsernameScreen({ onSet }) {
                   if (progress.streak) localStorage.setItem("cw_streak", String(progress.streak));
                 }
                 localStorage.setItem("cw_username", pinUsername);
+                localStorage.setItem("cw_pin_set", "1");
                 setChecking(false);
                 // Reload to pick up all restored values fresh
                 window.location.reload();

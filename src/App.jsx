@@ -1,6 +1,27 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 // ─── SOUNDS ──────────────────────────────────────────────────────────────────
+let sharedAC = null;
+
+function getAudioContext() {
+  try {
+    if (!sharedAC) {
+      sharedAC = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (sharedAC.state === 'suspended') {
+      sharedAC.resume();
+    }
+    return sharedAC;
+  } catch(e) { return null; }
+}
+
+// Unlock audio on first tap anywhere
+if (typeof window !== 'undefined') {
+  const unlock = () => { getAudioContext(); document.removeEventListener('touchstart', unlock); document.removeEventListener('click', unlock); };
+  document.addEventListener('touchstart', unlock, {once: true});
+  document.addEventListener('click', unlock, {once: true});
+}
+
 function playTone(ac, freq, start, duration, type='sine', gain=0.3) {
   try {
     const osc = ac.createOscillator();
@@ -18,21 +39,19 @@ function playTone(ac, freq, start, duration, type='sine', gain=0.3) {
 }
 
 function soundCorrectLetter() {
-  try {
-    const ac = new (window.AudioContext || window.webkitAudioContext)();
-    playTone(ac, 660, 0,    0.06, 'sine', 0.2);
-    playTone(ac, 880, 0.05, 0.1,  'sine', 0.15);
-  } catch(e) {}
+  const ac = getAudioContext();
+  if (!ac) return;
+  playTone(ac, 660, 0,    0.06, 'sine', 0.2);
+  playTone(ac, 880, 0.05, 0.1,  'sine', 0.15);
 }
 
 function soundCompletion() {
-  try {
-    const ac = new (window.AudioContext || window.webkitAudioContext)();
-    playTone(ac, 880,  0,    0.1,  'sine', 0.4);
-    playTone(ac, 1108, 0.08, 0.15, 'sine', 0.35);
-    playTone(ac, 1318, 0.18, 0.4,  'sine', 0.3);
-    playTone(ac, 1760, 0.18, 0.3,  'sine', 0.15);
-  } catch(e) {}
+  const ac = getAudioContext();
+  if (!ac) return;
+  playTone(ac, 880,  0,    0.1,  'sine', 0.4);
+  playTone(ac, 1108, 0.08, 0.15, 'sine', 0.35);
+  playTone(ac, 1318, 0.18, 0.4,  'sine', 0.3);
+  playTone(ac, 1760, 0.18, 0.3,  'sine', 0.15);
 }
 
 // ─── SUPABASE ────────────────────────────────────────────────────────────────
@@ -981,11 +1000,12 @@ function Leaderboard({ onClose }) {
   // Aggregate per user for all-time tabs
   const userMap = {};
   (scores||[]).forEach(s=>{
-    if (!userMap[s.username]) userMap[s.username]={username:s.username,streak:0,totalScore:0,count:0,times:[]};
+    if (!userMap[s.username]) userMap[s.username]={username:s.username,streak:0,totalScore:0,count:0,times:[],bestDaily:null};
     const u=userMap[s.username];
     u.totalScore += (s.score||0);
     u.count++;
     if (s.seconds) u.times.push(s.seconds);
+    if (s.mode==="daily" && s.seconds && (u.bestDaily===null || s.seconds < u.bestDaily)) u.bestDaily=s.seconds;
     if (s.streak>u.streak) u.streak=s.streak;
   });
 
@@ -1077,6 +1097,7 @@ function Leaderboard({ onClose }) {
                   </div>
                   <div style={{fontSize:11,color:C.textLight}}>
                     {tab==="today" ? `Score: ${u.score}/100` : `${u.count} puzzle${u.count!==1?"s":""} completed`}
+                    {tab==="streak" && u.bestDaily && <span style={{marginLeft:6,color:C.gold}}>⚡ {fmt(u.bestDaily)}</span>}
                   </div>
                 </div>
                 <div style={{textAlign:"right",flexShrink:0}}>

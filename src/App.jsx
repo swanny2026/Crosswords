@@ -125,15 +125,25 @@ async function requestPushPermission(username) {
 
 // Returns "taken" | "yours" | "free"
 async function checkUsername(username, deviceId) {
-  const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(username)}&select=device_id`);
+  const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(username)}&select=device_id,pin`);
   if (!rows || rows.length === 0) return "free";
   if (rows[0].device_id === deviceId) return "yours";
-  if (rows[0].device_id === "pre-existing") return "yours"; // legacy entries
-  return "taken";
+  if (rows[0].device_id === "pre-existing") return "yours";
+  return { status: "taken", hasPin: !!rows[0].pin };
 }
 
-async function registerUsername(username, deviceId) {
-  return dbRequest("POST", "players", { username, device_id: deviceId });
+async function verifyPin(username, pin) {
+  const rows = await dbRequest("GET", `players?username=eq.${encodeURIComponent(username)}&select=device_id,pin`);
+  if (!rows || rows.length === 0) return false;
+  return rows[0].pin === pin;
+}
+
+async function updateDeviceId(username, deviceId) {
+  return dbRequest("PATCH", `players?username=eq.${encodeURIComponent(username)}`, { device_id: deviceId });
+}
+
+async function savePin(username, pin) {
+  return dbRequest("PATCH", `players?username=eq.${encodeURIComponent(username)}`, { pin });
 }
 
 // ─── COOKIE-BASED DEVICE ID ──────────────────────────────────────────────────
@@ -1249,10 +1259,13 @@ function containsBannedWord(name) {
 }
 
 function UsernameScreen({ onSet }) {
-  const [value,    setValue]    = useState("");
-  const [error,    setError]    = useState("");
-  const [checking, setChecking] = useState(false);
-  const [showHow,  setShowHow]  = useState(false);
+  const [value,       setValue]       = useState("");
+  const [error,       setError]       = useState("");
+  const [checking,    setChecking]    = useState(false);
+  const [showHow,     setShowHow]     = useState(false);
+  const [pinMode,     setPinMode]     = useState(null); // null | "recover" | "setup"
+  const [pinUsername, setPinUsername] = useState("");
+  const [pinValue,    setPinValue]    = useState("");
 
   async function submit() {
     const name = value.trim();
@@ -1261,7 +1274,7 @@ function UsernameScreen({ onSet }) {
     if (name.length > 20){ setError("Max 20 characters"); return; }
     if (containsBannedWord(name)) { setError("Please choose an appropriate username"); return; }
 
-    // Returning player — skip check entirely
+    // Returning player on same device — skip check
     const savedName = localStorage.getItem("cw_username");
     if (savedName === name) { onSet(name); return; }
 
@@ -1273,21 +1286,27 @@ function UsernameScreen({ onSet }) {
     const checkPromise = checkUsername(name, deviceId);
     const status = await Promise.race([checkPromise, timeoutPromise]);
 
+    setChecking(false);
+
     if (status === "timeout" || status === "yours") {
-      setChecking(false);
       onSet(name);
       return;
     }
 
-    if (status === "taken") {
-      setError("That username is already taken — please choose another");
-      setChecking(false);
+    if (status === "free") {
+      // New user — register and ask to set PIN
+      await registerUsername(name, deviceId);
+      onSet(name, true); // true = show PIN setup
       return;
     }
 
-    // "free" — register it
-    await registerUsername(name, deviceId);
-    setChecking(false);
+    if (typeof status === "object" && status.status === "taken") {
+      // Username taken — show PIN recovery
+      setPinMode("recover");
+      setPinUsername(name);
+      return;
+    }
+
     onSet(name);
   }
 
@@ -1324,33 +1343,153 @@ function UsernameScreen({ onSet }) {
 
       {/* Username input */}
       <div style={{width:"100%",maxWidth:340}}>
-        <div style={{fontSize:13,color:C.textMid,marginBottom:10,textAlign:"center"}}>
-          Choose a username to track your scores on the leaderboard
+
+        {/* PIN Recovery mode */}
+        {pinMode==="recover" && (
+          <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:12}}>
+            <div style={{fontSize:14,fontWeight:"bold",marginBottom:4}}>"{pinUsername}" is taken</div>
+            <div style={{fontSize:13,color:C.textMid,marginBottom:12}}>Enter your 4-digit PIN to recover your account</div>
+            <input
+              value={pinValue}
+              onChange={e=>setPinValue(e.target.value.replace(/\D/g,"").slice(0,4))}
+              placeholder="Enter PIN"
+              inputMode="numeric"
+              maxLength={4}
+              style={{
+                width:"100%",background:C.bg,border:`1.5px solid ${C.borderDark}`,
+                borderRadius:10,padding:"14px 16px",color:C.text,
+                fontSize:24,fontFamily:"Georgia,serif",marginBottom:8,
+                boxSizing:"border-box",outline:"none",textAlign:"center",
+                letterSpacing:"0.5em",
+              }}
+            />
+            {error&&<div style={{fontSize:13,color:C.red,marginBottom:8,fontStyle:"italic"}}>{error}</div>}
+            <button onClick={async()=>{
+              if (pinValue.length !== 4) { setError("Please enter your 4-digit PIN"); return; }
+              setChecking(true); setError("");
+              const ok = await verifyPin(pinUsername, pinValue);
+              if (ok) {
+                await updateDeviceId(pinUsername, getDeviceId());
+                setChecking(false);
+                onSet(pinUsername);
+              } else {
+                setError("Incorrect PIN — please try again");
+                setChecking(false);
+              }
+            }} disabled={checking} style={{
+              width:"100%",background:C.text,border:"none",borderRadius:10,
+              color:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
+              cursor:"pointer",fontFamily:"Georgia,serif",marginBottom:8,
+            }}>{checking ? "Checking..." : "Recover Account →"}</button>
+            <button onClick={()=>{setPinMode(null);setError("");setPinValue("");}} style={{
+              width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:10,
+              color:C.textMid,padding:"11px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",
+            }}>← Try a different username</button>
+          </div>
+        )}
+
+        {/* Normal username input */}
+        {!pinMode && (<>
+          <div style={{fontSize:13,color:C.textMid,marginBottom:10,textAlign:"center"}}>
+            Choose a username to track your scores on the leaderboard
+          </div>
+          <input
+            value={value}
+            onChange={e=>{setValue(e.target.value);setError("");}}
+            onKeyDown={e=>e.key==="Enter"&&submit()}
+            placeholder="Your name..."
+            maxLength={20}
+            autoFocus
+            style={{
+              width:"100%",background:C.card,border:`1.5px solid ${C.borderDark}`,
+              borderRadius:10,padding:"14px 16px",color:C.text,
+              fontSize:18,fontFamily:"Georgia,serif",marginBottom:8,
+              boxSizing:"border-box",outline:"none",
+            }}
+          />
+          {error&&<div style={{fontSize:13,color:C.red,marginBottom:8,fontStyle:"italic"}}>{error}</div>}
+          <button onClick={submit} disabled={checking} style={{
+            width:"100%",background:checking?C.card:C.text,border:"none",borderRadius:10,
+            color:checking?C.textMid:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
+            cursor:checking?"default":"pointer",fontFamily:"Georgia,serif",marginBottom:10,
+          }}>{checking ? "Checking..." : "Play Now →"}</button>
+          <button onClick={()=>setShowHow(true)} style={{
+            width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:10,
+            color:C.textMid,padding:"11px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",
+          }}>❓ How to Play</button>
+        </>)}
+      </div>
+    </div>
+  );
+}
+
+// ─── PIN SETUP ───────────────────────────────────────────────────────────────
+function PinSetup({ username, onDone }) {
+  const [pin,     setPin]     = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [error,   setError]   = useState("");
+  const [saving,  setSaving]  = useState(false);
+
+  async function save() {
+    if (pin.length !== 4) { setError("Please enter a 4-digit PIN"); return; }
+    if (pin !== confirm)  { setError("PINs don't match — try again"); return; }
+    setSaving(true);
+    await savePin(username, pin);
+    localStorage.setItem("cw_pin_set", "1");
+    setSaving(false);
+    onDone();
+  }
+
+  return (
+    <div style={{
+      position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",
+      display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:20,
+    }}>
+      <div style={{
+        background:C.bg,borderRadius:20,padding:28,width:"100%",maxWidth:340,
+        border:`2px solid ${C.borderDark}`,textAlign:"center",
+      }}>
+        <div style={{fontSize:28,marginBottom:8}}>🔐</div>
+        <div style={{fontSize:18,fontWeight:"bold",marginBottom:6}}>Set a recovery PIN</div>
+        <div style={{fontSize:13,color:C.textMid,marginBottom:20}}>
+          Choose a 4-digit PIN to protect your progress. If you ever lose access you can use it to recover your account.
         </div>
         <input
-          value={value}
-          onChange={e=>{setValue(e.target.value);setError("");}}
-          onKeyDown={e=>e.key==="Enter"&&submit()}
-          placeholder="Your name..."
-          maxLength={20}
-          autoFocus
+          value={pin}
+          onChange={e=>setPin(e.target.value.replace(/\D/g,"").slice(0,4))}
+          placeholder="Choose PIN"
+          inputMode="numeric"
+          maxLength={4}
           style={{
             width:"100%",background:C.card,border:`1.5px solid ${C.borderDark}`,
-            borderRadius:10,padding:"14px 16px",color:C.text,
-            fontSize:18,fontFamily:"Georgia,serif",marginBottom:8,
-            boxSizing:"border-box",outline:"none",
+            borderRadius:10,padding:"14px",color:C.text,fontSize:24,
+            fontFamily:"Georgia,serif",marginBottom:8,boxSizing:"border-box",
+            outline:"none",textAlign:"center",letterSpacing:"0.5em",
+          }}
+        />
+        <input
+          value={confirm}
+          onChange={e=>setConfirm(e.target.value.replace(/\D/g,"").slice(0,4))}
+          placeholder="Confirm PIN"
+          inputMode="numeric"
+          maxLength={4}
+          style={{
+            width:"100%",background:C.card,border:`1.5px solid ${C.borderDark}`,
+            borderRadius:10,padding:"14px",color:C.text,fontSize:24,
+            fontFamily:"Georgia,serif",marginBottom:8,boxSizing:"border-box",
+            outline:"none",textAlign:"center",letterSpacing:"0.5em",
           }}
         />
         {error&&<div style={{fontSize:13,color:C.red,marginBottom:8,fontStyle:"italic"}}>{error}</div>}
-        <button onClick={submit} disabled={checking} style={{
-          width:"100%",background:checking?C.card:C.text,border:"none",borderRadius:10,
-          color:checking?C.textMid:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
-          cursor:checking?"default":"pointer",fontFamily:"Georgia,serif",marginBottom:10,
-        }}>{checking ? "Checking..." : "Play Now →"}</button>
-        <button onClick={()=>setShowHow(true)} style={{
+        <button onClick={save} disabled={saving} style={{
+          width:"100%",background:C.text,border:"none",borderRadius:10,
+          color:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",
+          cursor:"pointer",fontFamily:"Georgia,serif",marginBottom:8,
+        }}>{saving ? "Saving..." : "Set PIN →"}</button>
+        <button onClick={()=>{ localStorage.setItem("cw_pin_set","1"); onDone(); }} style={{
           width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:10,
           color:C.textMid,padding:"11px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",
-        }}>❓ How to Play</button>
+        }}>Maybe later</button>
       </div>
     </div>
   );
@@ -1959,25 +2098,23 @@ export default function Crosswords() {
   const [showDailyPrompt, setShowDailyPrompt] = useState(false);
   const [showHowToPlay,   setShowHowToPlay]   = useState(false);
 
-  // On first load — try to restore progress from cloud via device ID
+  // On first load — try to restore/sync progress from cloud via device ID
   useEffect(()=>{
     async function tryCloudRestore() {
-      if (username) return; // already logged in
       const deviceId = getDeviceId();
       const progress = await loadProgressFromCloud(deviceId);
       if (!progress) return;
-      // Restore from cloud
       const { username: u, level, streak: s, last_daily, daily_done } = progress;
-      if (u) {
+      if (u && !localStorage.getItem("cw_username")) {
         localStorage.setItem("cw_username", u);
         setUsername(u);
       }
-      if (level) {
-        const lvl = Math.min(Math.max(parseInt(level)||1, 1), 250);
+      if (level && parseInt(level) > parseInt(localStorage.getItem("cw_level")||"1")) {
+        const lvl = Math.min(Math.max(parseInt(level), 1), 250);
         localStorage.setItem("cw_level", String(lvl));
         setCurrentLevel(lvl);
       }
-      if (s) {
+      if (s && parseInt(s) > parseInt(localStorage.getItem("cw_streak")||"0")) {
         localStorage.setItem("cw_streak", String(s));
         setStreak(parseInt(s));
       }
@@ -1995,11 +2132,11 @@ export default function Crosswords() {
     if (username && !dailyDone && screen==="home") setShowDailyPrompt(true);
   },[username]);
 
-  function handleUsernameSet(name) {
+  function handleUsernameSet(name, isNew=false) {
     localStorage.setItem("cw_username", name);
     setUsername(name);
     if (!dailyDone) setShowDailyPrompt(true);
-    // Save to cloud
+    if (isNew) setShowPinSetup(true);
     saveProgressToCloud(name, currentLevel, streak,
       localStorage.getItem("cw_last_daily"),
       localStorage.getItem("cw_daily_done"));
@@ -2039,6 +2176,15 @@ export default function Crosswords() {
   }
 
   const [showDailyShare, setShowDailyShare] = useState(false);
+  const [showPinSetup, setShowPinSetup] = useState(false);
+
+  // Show PIN setup for existing users who haven't set one yet
+  useEffect(()=>{
+    if (username && !localStorage.getItem("cw_pin_set")) {
+      // Small delay so home screen loads first
+      setTimeout(()=>setShowPinSetup(true), 1500);
+    }
+  }, [username]);
 
   function handleShareDaily() {
     setShowDailyShare(true);
@@ -2093,6 +2239,7 @@ export default function Crosswords() {
     <>
       {showHowToPlay && <HowToPlay onClose={()=>setShowHowToPlay(false)}/>}
       {showDailyShare && <DailyShareCard streak={streak} onClose={()=>setShowDailyShare(false)}/>}
+      {showPinSetup && <PinSetup username={username} onDone={()=>setShowPinSetup(false)}/>}
       <HomeScreen
         username={username}
         currentLevel={currentLevel}

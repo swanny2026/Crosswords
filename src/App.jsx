@@ -146,6 +146,10 @@ async function savePin(username, pin) {
   return dbRequest("PATCH", `players?username=eq.${encodeURIComponent(username)}`, { pin });
 }
 
+async function registerUsername(username, deviceId) {
+  return dbRequest("POST", "players", { username, device_id: deviceId, level: 1, streak: 0 });
+}
+
 // ─── COOKIE-BASED DEVICE ID ──────────────────────────────────────────────────
 function getCookie(name) {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
@@ -177,14 +181,17 @@ function getDeviceId() {
 async function saveProgressToCloud(username, level, streak, lastDaily, dailyDone) {
   try {
     const deviceId = getDeviceId();
-    await dbRequest("POST", "players", {
-      username,
-      device_id: deviceId,
-      level: level || 1,
-      streak: streak || 0,
-      last_daily: lastDaily || null,
-      daily_done: dailyDone || null,
-    }, {"Prefer": "resolution=merge-duplicates"});
+    // First try to update existing row
+    const updateRes = await dbRequest("PATCH",
+      `players?username=eq.${encodeURIComponent(username)}`,
+      { device_id: deviceId, level: level||1, streak: streak||0, last_daily: lastDaily||null, daily_done: dailyDone||null }
+    );
+    // If no row existed, insert
+    if (!updateRes || (Array.isArray(updateRes) && updateRes.length === 0)) {
+      await dbRequest("POST", "players",
+        { username, device_id: deviceId, level: level||1, streak: streak||0, last_daily: lastDaily||null, daily_done: dailyDone||null }
+      );
+    }
   } catch(e) {}
 }
 

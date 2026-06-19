@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<style>
+body { font-family: Georgia, serif; background: #f2ead8; padding: 40px 20px; text-align: center; }
+h2 { margin-bottom: 16px; }
+#info { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; word-break: break-all; font-size: 14px; }
+button { background: #1a1408; color: #f2ead8; border: none; border-radius: 10px; padding: 14px 24px; font-size: 16px; font-family: Georgia, serif; cursor: pointer; }
+</style>
+</head>
+<body>
+<h2>Your Device ID</h2>
+<div id="info">Loading...</div>
+<button onclick="copy()">Copy ID</button>
+<script>
+function getCookie(name) {
+  const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+  return match ? match[2] : null;
+}
+const cookieId = getCookie('cw_device_id');
+const localId = localStorage.getItem('cw_device_id');
+const username = localStorage.getItem('cw_username');
+const level = localStorage.getItem('cw_level');
+const streak = localStorage.getItem('cw_streak');
+
+document.getElementById('info').innerHTML = `
+  <b>Username:</b> ${username || 'none'}<br>
+  <b>Level:</b> ${level || 'none'}<br>
+  <b>Streak:</b> ${streak || 'none'}<br><br>
+  <b>Cookie ID:</b> ${cookieId || 'none'}<br>
+  <b>LocalStorage ID:</b> ${localId || 'none'}
+`;
+
+function copy() {
+  const id = cookieId || localId || 'none';
+  navigator.clipboard.writeText(id).then(()=>alert('Copied: ' + id));
+}
+</script>
+</body>
+</html>

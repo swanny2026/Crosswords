@@ -1814,10 +1814,28 @@ function InstallGuide({ onClose, hasPins }) {
           <div style={{fontSize:22,fontWeight:"bold"}}>Add to Home Screen</div>
         </div>
 
-        {!hasPins && (
-          <div style={{background:"#fff3cd",border:"1px solid #ffc107",borderRadius:12,padding:16,marginBottom:20}}>
-            <div style={{fontSize:15,fontWeight:"bold",marginBottom:4}}>⚠️ Set your PIN first!</div>
-            <div style={{fontSize:13,color:"#856404"}}>Before adding to your home screen, please set a recovery PIN in Settings. Without it, you may lose your progress if you ever delete the icon.</div>
+        {!hasPins ? (
+          <div style={{background:"#c0392b",borderRadius:12,padding:16,marginBottom:20,textAlign:"center"}}>
+            <div style={{fontSize:18,marginBottom:6}}>🛑 Stop — do this first!</div>
+            <div style={{fontSize:14,fontWeight:"bold",color:"white",marginBottom:8}}>
+              You must set a recovery PIN before adding to your home screen.
+            </div>
+            <div style={{fontSize:13,color:"rgba(255,255,255,0.85)",lineHeight:1.5,marginBottom:12}}>
+              Without a PIN, adding to your home screen will create a fresh install with no saved progress. You will lose your level, streak and username.
+            </div>
+            <button onClick={onClose} style={{
+              background:"white",border:"none",borderRadius:8,
+              padding:"12px 24px",fontSize:14,fontWeight:"bold",
+              color:"#c0392b",cursor:"pointer",fontFamily:"Georgia,serif",
+            }}>← Go back and set my PIN first</button>
+          </div>
+        ) : (
+          <div style={{background:"#27ae60",borderRadius:12,padding:14,marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
+            <div style={{fontSize:22}}>✅</div>
+            <div style={{fontSize:14,color:"white",lineHeight:1.4}}>
+              <strong>PIN is set — you're good to go!</strong><br/>
+              Your progress is protected. If you ever lose access, sign in with your username and PIN to restore everything.
+            </div>
           </div>
         )}
 

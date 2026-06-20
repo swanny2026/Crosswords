@@ -1337,7 +1337,7 @@ function ShareCard({ username, mode, level, score, grade, seconds, streak, puzzl
 // ─── LEADERBOARD ─────────────────────────────────────────────────────────────
 function Leaderboard({ onClose }) {
   const [scores, setScores] = useState(null);
-  const [tab,    setTab]    = useState("streak"); // streak | points | speed | today
+  const [tab,    setTab]    = useState("streak"); // streak | level | speed | today
 
   useEffect(()=>{
     fetchLeaderboard().then(data=>setScores(data||[]));
@@ -1346,16 +1346,22 @@ function Leaderboard({ onClose }) {
   const fmt = s=>`${Math.floor(s/60)}:${String(s%60).padStart(2,"0")}`;
   const todayKey = getTodayKey();
 
-  // Aggregate per user for all-time tabs
+  // Aggregate per user
   const userMap = {};
   (scores||[]).forEach(s=>{
-    if (!userMap[s.username]) userMap[s.username]={username:s.username,streak:0,totalScore:0,count:0,times:[],bestDaily:null};
+    if (!userMap[s.username]) userMap[s.username]={
+      username:s.username, streak:0, dailyCount:0, totalCount:0,
+      times:[], bestDaily:null, maxLevel:1,
+    };
     const u=userMap[s.username];
-    u.totalScore += (s.score||0);
-    u.count++;
+    u.totalCount++;
     if (s.seconds) u.times.push(s.seconds);
-    if (s.mode==="daily" && s.seconds && (u.bestDaily===null || s.seconds < u.bestDaily)) u.bestDaily=s.seconds;
-    if (s.streak>u.streak) u.streak=s.streak;
+    if (s.mode==="daily") {
+      u.dailyCount++;
+      if (s.seconds && (u.bestDaily===null || s.seconds < u.bestDaily)) u.bestDaily=s.seconds;
+    }
+    if (s.mode==="regular" && parseInt(s.level||1) > u.maxLevel) u.maxLevel=parseInt(s.level||1);
+    if ((s.streak||0) > u.streak) u.streak=s.streak||0;
   });
 
   const users = Object.values(userMap).map(u=>({
@@ -1363,7 +1369,7 @@ function Leaderboard({ onClose }) {
     avgTime: u.times.length ? Math.round(u.times.reduce((a,b)=>a+b,0)/u.times.length) : 9999,
   }));
 
-  // Today's daily — one entry per user, best time if submitted multiple times
+  // Today's daily
   const todayMap = {};
   (scores||[]).filter(s=>{
     if (s.mode !== "daily" || !s.created_at) return false;
@@ -1379,14 +1385,13 @@ function Leaderboard({ onClose }) {
   const todayEntries = Object.values(todayMap).sort((a,b)=>a.seconds-b.seconds);
 
   const sorted = tab==="today" ? [] : [...users].sort((a,b)=>{
-    if (tab==="streak") return b.streak-a.streak || b.count-a.count;
-    if (tab==="points") return b.totalScore-a.totalScore || b.count-a.count;
-    return a.avgTime-b.avgTime || b.count-a.count;
+    if (tab==="streak") return b.dailyCount-a.dailyCount || b.streak-a.streak;
+    if (tab==="level")  return b.maxLevel-a.maxLevel || b.totalCount-a.totalCount;
+    return a.avgTime-b.avgTime || b.totalCount-a.totalCount;
   });
 
   const medalColor = i=>i===0?"#c9a227":i===1?"#9a9a9a":i===2?"#8a5a2a":C.accentLt;
   const medalText  = i=>i<3?"#fff":C.textMid;
-
   const displayList = tab==="today" ? todayEntries : sorted;
   const isEmpty = tab==="today" ? todayEntries.length===0 : sorted.length===0;
 
@@ -1401,9 +1406,9 @@ function Leaderboard({ onClose }) {
           </div>
         </div>
 
-        {/* Tabs — 2x2 grid to fit 4 */}
+        {/* Tabs */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-          {[["streak","🔥 Streak"],["points","⭐ Points"],["speed","⚡ Avg Time"],["today","📰 Today"]].map(([key,label])=>(
+          {[["streak","🔥 Daily Streak"],["level","📖 Level"],["speed","⚡ Avg Time"],["today","📰 Today"]].map(([key,label])=>(
             <button key={key} onClick={()=>setTab(key)} style={{
               padding:"9px 4px",borderRadius:8,fontSize:12,fontWeight:"bold",
               background:tab===key?C.text:C.card,
@@ -1430,36 +1435,41 @@ function Leaderboard({ onClose }) {
             {displayList.map((u,i)=>{
               const isMe = u.username === localStorage.getItem("cw_username");
               return (
-              <div key={u.username} style={{
-                background: isMe ? C.goldLt : C.card,
-                border:`1px solid ${isMe ? C.gold : i<3 ? C.borderDark : C.border}`,
-                borderRadius:10,padding:"12px 16px",
-                display:"flex",alignItems:"center",gap:12,
-              }}>
-                <div style={{
-                  width:28,height:28,borderRadius:"50%",
-                  background:medalColor(i),display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:11,fontWeight:"bold",color:medalText(i),flexShrink:0,
-                  lineHeight:1,fontFamily:"Georgia,serif",paddingTop:1,
-                }}>{i+1}</div>
-                <div style={{flex:1,minWidth:0}}>
-                  <div style={{fontWeight:"bold",fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
-                    {u.username}{isMe && <span style={{fontSize:11,color:C.gold,marginLeft:6}}>← you</span>}
+                <div key={u.username} style={{
+                  background: isMe ? C.goldLt : C.card,
+                  border:`1px solid ${isMe ? C.gold : i<3 ? C.borderDark : C.border}`,
+                  borderRadius:10,padding:"12px 16px",
+                  display:"flex",alignItems:"center",gap:12,
+                }}>
+                  <div style={{
+                    width:28,height:28,borderRadius:"50%",
+                    background:medalColor(i),display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:11,fontWeight:"bold",color:medalText(i),flexShrink:0,
+                    lineHeight:1,fontFamily:"Georgia,serif",paddingTop:1,
+                  }}>{i+1}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontWeight:"bold",fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
+                      {u.username}{isMe && <span style={{fontSize:11,color:C.gold,marginLeft:6}}>← you</span>}
+                    </div>
+                    <div style={{fontSize:11,color:C.textLight}}>
+                      {tab==="streak" && `${u.dailyCount} daily${u.dailyCount!==1?"s":""} completed${u.bestDaily ? ` · ⚡ best ${fmt(u.bestDaily)}` : ""}`}
+                      {tab==="level"  && `${u.totalCount} puzzle${u.totalCount!==1?"s":""} completed`}
+                      {tab==="speed"  && `${u.times.length} puzzle${u.times.length!==1?"s":""} timed`}
+                      {tab==="today"  && fmt(u.seconds)}
+                    </div>
                   </div>
-                  <div style={{fontSize:11,color:C.textLight}}>
-                    {tab==="today" ? `Score: ${u.score}/100` : `${u.count} puzzle${u.count!==1?"s":""} completed`}
-                    {tab==="streak" && u.bestDaily && <span style={{marginLeft:6,color:C.gold}}>⚡ {fmt(u.bestDaily)}</span>}
+                  <div style={{textAlign:"right",flexShrink:0}}>
+                    <div style={{fontWeight:"bold",fontSize:18,color:C.text}}>
+                      {tab==="streak" ? `${u.dailyCount}🔥`
+                       : tab==="level"  ? `Lvl ${u.maxLevel}`
+                       : tab==="today"  ? fmt(u.seconds)
+                       : fmt(u.avgTime)}
+                    </div>
+                    <div style={{fontSize:10,color:C.textLight}}>
+                      {tab==="streak"?"dailies":tab==="level"?"reached":tab==="today"?"time":"avg time"}
+                    </div>
                   </div>
                 </div>
-                <div style={{textAlign:"right",flexShrink:0}}>
-                  <div style={{fontWeight:"bold",fontSize:18,color:C.text}}>
-                    {tab==="streak"?`${u.streak}🔥`:tab==="points"?u.totalScore:tab==="today"?fmt(u.seconds):fmt(u.avgTime)}
-                  </div>
-                  <div style={{fontSize:10,color:C.textLight}}>
-                    {tab==="streak"?"days":tab==="points"?"total pts":"time"}
-                  </div>
-                </div>
-              </div>
               );
             })}
           </div>
@@ -1477,9 +1487,9 @@ function HowToPlay({ onClose }) {
     { emoji:"✅", title:"Correct letters", body:"If the letter appears in the grid, all matching cells light up instantly — for free! Completing a word gives you +2 bonus letter guesses." },
     { emoji:"❌", title:"Wrong letters", body:"If the letter is not in the grid, you lose one guess. You start with 5 guesses — use them wisely!" },
     { emoji:"⚡", title:"Cascade effect", body:"Revealing a word can uncover letters shared with other words, triggering a chain reaction. Smart guesses go further!" },
-    { emoji:"⏱", title:"Your score", body:"Scores are out of 100 based on how quickly you complete the puzzle. Under 30 seconds = 100 points. Grade A–F is awarded at the end." },
+    { emoji:"⏱", title:"Your time", body:"How fast can you solve it? Your completion time is recorded and shown on the leaderboard. The faster the better!" },
     { emoji:"📰", title:"Daily Challenge", body:"A harder puzzle drops every day. Complete it to build your 🔥 streak. Miss a day and it resets — so come back daily!" },
-    { emoji:"🏆", title:"Leaderboard", body:"Scores are saved and ranked publicly. Compete for the highest streak, most total points, or furthest level reached." },
+    { emoji:"🏆", title:"Leaderboard", body:"Compete with other players. Compare daily streaks, level progress and fastest completion times." },
   ];
 
   return (
@@ -1510,20 +1520,6 @@ function HowToPlay({ onClose }) {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Score table */}
-        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:10,padding:"14px 16px",marginBottom:20}}>
-          <div style={{fontSize:12,fontWeight:"bold",color:C.textMid,letterSpacing:"0.1em",textTransform:"uppercase",marginBottom:10}}>Score Guide</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"6px 0",fontSize:12}}>
-            {[["Under 30s","100pts","A"],["Under 1min","90pts","A"],["Under 2min","70pts","B"],["Under 4min","50pts","C"],["Under 9min","20pts","E"],["9min+","10pts","F"]].map(([time,pts,grade])=>(
-              <div key={time} style={{display:"contents"}}>
-                <div style={{color:C.textLight}}>{time}</div>
-                <div style={{color:C.textMid,textAlign:"center"}}>{pts}</div>
-                <div style={{fontWeight:"bold",color:C.text,textAlign:"right"}}>Grade {grade}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         <button onClick={onClose} style={{
@@ -1698,7 +1694,7 @@ function UsernameScreen({ onSet }) {
         {/* Normal username input */}
         {!pinMode && (<>
           <div style={{fontSize:13,color:C.textMid,marginBottom:10,textAlign:"center"}}>
-            Choose a username to track your scores on the leaderboard
+            Choose a username to track your times on the leaderboard
           </div>
           <input
             value={value}
@@ -2505,9 +2501,8 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 {isDaily&&(result?.streak||streak)>=7&&(result?.streak||streak)<30&&(
                   <div style={{fontSize:12,color:C.textMid,marginBottom:8,fontStyle:"italic"}}>One week strong — keep it up!</div>
                 )}
-                <div style={{fontSize:72,fontWeight:"bold",color:C.text,lineHeight:1}}>{result.grade}</div>
-                <div style={{fontSize:22,color:C.text,marginTop:4}}>{result.score}<span style={{fontSize:14,color:C.textLight}}>/100</span></div>
-                <div style={{fontSize:13,color:C.textLight,marginTop:2,fontFamily:"monospace"}}>{fmt(result.seconds)}</div>
+                <div style={{fontSize:56,fontWeight:"bold",color:C.text,lineHeight:1,marginTop:8}}>{fmt(result.seconds)}</div>
+                <div style={{fontSize:12,color:C.textLight,marginTop:4,letterSpacing:"0.1em",textTransform:"uppercase"}}>completion time</div>
                 {/* Push notification opt-in — daily only */}
                 {isDaily && <PushPromptCheck username={username} />}
                 <div style={{display:"flex",gap:10,marginTop:20}}>
@@ -2756,14 +2751,14 @@ export default function Crosswords() {
         currentLevel={currentLevel}
         streak={streak}
         dailyDone={dailyDone}
-        onPlay={()=>setScreen("game")}
-        onDaily={()=>{ if (!dailyDone) setScreen("daily"); }}
+        onPlay={()=>{ setShowDailyPrompt(false); setScreen("game"); }}
+        onDaily={()=>{ if (!dailyDone) { setShowDailyPrompt(false); setScreen("daily"); } }}
         onLeaderboard={()=>{ setShowDailyPrompt(false); setScreen("leaderboard"); }}
-        onHowToPlay={()=>setShowHowToPlay(true)}
+        onHowToPlay={()=>{ setShowDailyPrompt(false); setShowHowToPlay(true); }}
         onResetProgress={handleResetProgress}
         onShareDaily={handleShareDaily}
-        onSetPin={()=>{ localStorage.removeItem("cw_pin_set"); setShowPinSetup(true); }}
-        onSettings={()=>setShowSettings(true)}
+        onSetPin={()=>{ setShowDailyPrompt(false); localStorage.removeItem("cw_pin_set"); setShowPinSetup(true); }}
+        onSettings={()=>{ setShowDailyPrompt(false); setShowSettings(true); }}
       />
 
       {/* Daily prompt overlay */}

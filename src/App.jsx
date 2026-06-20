@@ -1365,12 +1365,13 @@ function Leaderboard({ onClose }) {
 
   // Today's daily — one entry per user, best time if submitted multiple times
   const todayMap = {};
-  (scores||[]).filter(s=>s.mode==="daily" && s.created_at?.startsWith(todayKey.replace(/-(\d)$/,"-0$1").replace(/-(\d)-/,"-0$1-"))||
-    (s.mode==="daily" && s.created_at && (()=>{
-      const d=new Date(s.created_at);
-      return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`===todayKey;
-    })())
-  ).forEach(s=>{
+  (scores||[]).filter(s=>{
+    if (s.mode !== "daily" || !s.created_at) return false;
+    try {
+      const d = new Date(s.created_at);
+      return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}` === todayKey;
+    } catch(e) { return false; }
+  }).forEach(s=>{
     if (!todayMap[s.username] || s.seconds < todayMap[s.username].seconds) {
       todayMap[s.username] = s;
     }
@@ -2687,6 +2688,8 @@ export default function Crosswords() {
   }
 
   if (!username) return <UsernameScreen onSet={handleUsernameSet}/>;
+
+  if (screen==="leaderboard") return <Leaderboard onClose={()=>setScreen("home")}/>;
 
   if (showSettings) return (
     <SettingsScreen

@@ -1633,7 +1633,7 @@ function UsernameScreen({ onSet }) {
           A crossword puzzle game where you reveal hidden words by guessing letters — one tap at a time.
         </div>
         <div style={{display:"flex",gap:16,fontSize:12,color:C.textLight}}>
-          <span>📖 250 levels</span>
+          <span>📖 500 levels</span>
           <span>📰 Daily challenge</span>
           <span>🏆 Leaderboard</span>
         </div>
@@ -2305,7 +2305,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
           <button onClick={onBack} style={{background:"none",border:"none",fontSize:20,color:C.text}}>←</button>
           <div style={{textAlign:"center"}}>
             <div style={{fontSize:10,letterSpacing:"0.3em",color:C.textLight,textTransform:"uppercase"}}>
-              {isDaily?"Daily Challenge":`Level ${level} of 250`}
+              {isDaily?"Daily Challenge":`Level ${level} of 500`}
             </div>
             <div style={{fontSize:22,fontWeight:"bold",letterSpacing:"0.08em",borderBottom:`2px solid ${C.text}`,paddingBottom:2}}>
               CROSSWORDS

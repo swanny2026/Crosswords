@@ -1385,7 +1385,7 @@ function Leaderboard({ onClose }) {
   const todayEntries = Object.values(todayMap).sort((a,b)=>a.seconds-b.seconds);
 
   const sorted = tab==="today" ? [] : [...users].sort((a,b)=>{
-    if (tab==="streak") return b.dailyCount-a.dailyCount || b.streak-a.streak;
+    if (tab==="streak") return b.streak-a.streak || b.dailyCount-a.dailyCount;
     if (tab==="level")  return b.maxLevel-a.maxLevel || b.totalCount-a.totalCount;
     return a.avgTime-b.avgTime || b.totalCount-a.totalCount;
   });
@@ -1452,7 +1452,7 @@ function Leaderboard({ onClose }) {
                       {u.username}{isMe && <span style={{fontSize:11,color:C.gold,marginLeft:6}}>← you</span>}
                     </div>
                     <div style={{fontSize:11,color:C.textLight}}>
-                      {tab==="streak" && `${u.dailyCount} daily${u.dailyCount!==1?"s":""} completed${u.bestDaily ? ` · ⚡ best ${fmt(u.bestDaily)}` : ""}`}
+                      {tab==="streak" && `${u.dailyCount} daily challenge${u.dailyCount!==1?"s":""} completed`}
                       {tab==="level"  && ""}
                       {tab==="speed"  && `${u.times.length} puzzle${u.times.length!==1?"s":""} timed`}
                       {tab==="today"  && ""}
@@ -1460,7 +1460,7 @@ function Leaderboard({ onClose }) {
                   </div>
                   <div style={{textAlign:"right",flexShrink:0}}>
                     <div style={{fontWeight:"bold",fontSize:18,color:C.text}}>
-                      {tab==="streak" ? `${u.dailyCount}🔥`
+                      {tab==="streak" ? `${u.streak}🔥`
                        : tab==="level"  ? `Lvl ${u.maxLevel}`
                        : tab==="today"  ? fmt(u.seconds)
                        : fmt(u.avgTime)}

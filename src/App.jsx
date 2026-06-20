@@ -1453,7 +1453,7 @@ function Leaderboard({ onClose }) {
                     </div>
                     <div style={{fontSize:11,color:C.textLight}}>
                       {tab==="streak" && `${u.dailyCount} daily${u.dailyCount!==1?"s":""} completed${u.bestDaily ? ` · ⚡ best ${fmt(u.bestDaily)}` : ""}`}
-                      {tab==="level"  && `${u.totalCount} puzzle${u.totalCount!==1?"s":""} completed`}
+                      {tab==="level"  && ""}
                       {tab==="speed"  && `${u.times.length} puzzle${u.times.length!==1?"s":""} timed`}
                       {tab==="today"  && fmt(u.seconds)}
                     </div>

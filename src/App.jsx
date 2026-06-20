@@ -2758,7 +2758,7 @@ export default function Crosswords() {
         dailyDone={dailyDone}
         onPlay={()=>setScreen("game")}
         onDaily={()=>{ if (!dailyDone) setScreen("daily"); }}
-        onLeaderboard={()=>setScreen("leaderboard")}
+        onLeaderboard={()=>{ setShowDailyPrompt(false); setScreen("leaderboard"); }}
         onHowToPlay={()=>setShowHowToPlay(true)}
         onResetProgress={handleResetProgress}
         onShareDaily={handleShareDaily}

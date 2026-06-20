@@ -1,6 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
-// ─── SOUNDS ──────────────────────────────────────────────────────────────────
+// ─── HAPTICS ─────────────────────────────────────────────────────────────────
+function hapticLight() {
+  try { if (window.navigator.vibrate) window.navigator.vibrate(10); } catch(e) {}
+}
+function hapticMedium() {
+  try { if (window.navigator.vibrate) window.navigator.vibrate(25); } catch(e) {}
+}
+function hapticHeavy() {
+  try { if (window.navigator.vibrate) window.navigator.vibrate([30,20,30]); } catch(e) {}
+}
+function hapticError() {
+  try { if (window.navigator.vibrate) window.navigator.vibrate([50,30,50]); } catch(e) {}
+}
 let sharedAC = null;
 
 function getAudioContext() {
@@ -2070,15 +2082,23 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
     revealAll();
     setGameState("won");
     soundCompletion();
+    hapticHeavy();
     const score=calcScore(seconds);
     const grade=getGrade(score);
-    const res={score,grade,seconds,perfect:isPerfect&&!hintUsed};
+    const perfect=isPerfect&&!hintUsed;
+    const res={score,grade,seconds,perfect};
     setResult(res);
-    // Submit to Supabase
     submitScore({username,mode,level,seconds,score,grade,streak,created_at:new Date().toISOString()});
     onComplete(res);
-    setTimeout(()=>showBurst("🏆","Complete!",`${score}/100 — Grade ${grade}`,mode==="daily"?C.goldLt:C.greenLt,true),300);
-  },[puzzle.words.length,revealAll,seconds,username,mode,level,streak,onComplete,showBurst]);
+    if (perfect) {
+      // Bigger celebration for perfect game
+      setConfetti(true);
+      setTimeout(()=>setConfetti(false), 4000);
+      setTimeout(()=>showBurst("⭐","Perfect!","No wrong guesses!",C.goldLt,false),300);
+    } else {
+      setTimeout(()=>showBurst("🏆","Complete!",`${score}/100 — Grade ${grade}`,mode==="daily"?C.goldLt:C.greenLt,true),300);
+    }
+  },[puzzle.words.length,revealAll,seconds,username,mode,level,streak,isPerfect,hintUsed,onComplete,showBurst]);
 
   function handleKeyTap(letter) {
     if (gameState!=="playing") return;
@@ -2097,6 +2117,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
       pulseKeys(hits);
       setCorrectLetters(prev=>new Set([...prev,letter]));
       soundCorrectLetter();
+      hapticLight();
       const completed=checkCompletedWords(newRevealed,guessedWords);
       if (completed.length>0) {
         const newGuessed=new Set([...guessedWords,...completed.map(w=>w.id)]);
@@ -2112,6 +2133,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
     } else {
       setWrongLetters(prev=>new Set([...prev,letter]));
       setIsPerfect(false);
+      hapticError();
       setLetterLeft(prev=>{
         const next=prev-1;
         if (next<=0){ setGameState("lost"); showToast("Out of guesses — try again!","bad"); }
@@ -2139,6 +2161,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
 
       <style>{`
         @keyframes cellPop{0%{transform:scale(1)}35%{transform:scale(1.2);background:#f8f2d8}100%{transform:scale(1)}}
+        @keyframes cellFlip{0%{transform:rotateY(0deg);background:${C.cellBg}}50%{transform:rotateY(90deg);background:${C.cellBg}}51%{transform:rotateY(90deg);background:${C.cellFilled}}100%{transform:rotateY(0deg);background:${C.cellFilled}}}
         @keyframes badShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
         @keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
         *{box-sizing:border-box;}
@@ -2207,6 +2230,8 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
               const [r,c]=key.split(",").map(Number);
               const isRev=revealed.has(key);
               const isPop=pulsingCells.has(key);
+              // Stagger flip animation based on position for wave effect
+              const delay = isPop ? `${(r*3+c)*0.04}s` : "0s";
               return (
                 <div key={key} style={{
                   position:"absolute",left:c*(CELL+GAP),top:r*(CELL+GAP),
@@ -2217,9 +2242,10 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                   fontSize:isRev?22:13,fontWeight:"bold",
                   color:isRev?C.text:C.borderDark,
                   fontFamily:isRev?"Georgia,serif":"inherit",
-                  transition:"background 0.25s, border-color 0.25s",
-                  animation:isPop?"cellPop 0.6s ease":"none",
+                  transition:"border-color 0.2s",
+                  animation:isPop?`cellFlip 0.5s ease ${delay} both`:"none",
                   userSelect:"none",zIndex:1,
+                  perspective:"200px",
                 }}>
                   {isRev?letter:"·"}
                 </div>

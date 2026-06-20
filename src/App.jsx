@@ -1438,7 +1438,8 @@ function Leaderboard({ onClose }) {
                 <div style={{
                   width:28,height:28,borderRadius:"50%",
                   background:medalColor(i),display:"flex",alignItems:"center",justifyContent:"center",
-                  fontSize:12,fontWeight:"bold",color:medalText(i),flexShrink:0,
+                  fontSize:11,fontWeight:"bold",color:medalText(i),flexShrink:0,
+                  lineHeight:1,fontFamily:"Georgia,serif",paddingTop:1,
                 }}>{i+1}</div>
                 <div style={{flex:1,minWidth:0}}>
                   <div style={{fontWeight:"bold",fontSize:15,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>
@@ -1800,49 +1801,168 @@ function PinSetup({ username, onDone }) {
   );
 }
 
+// ─── INSTALL GUIDE ───────────────────────────────────────────────────────────
+function InstallGuide({ onClose, hasPins }) {
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isAndroid = /android/i.test(navigator.userAgent);
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"Georgia,serif",color:C.text,overflowY:"auto"}}>
+      <div style={{maxWidth:480,margin:"0 auto",padding:"24px 16px 60px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:20}}>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text}}>←</button>
+          <div style={{fontSize:22,fontWeight:"bold"}}>Add to Home Screen</div>
+        </div>
+
+        {!hasPins && (
+          <div style={{background:"#fff3cd",border:"1px solid #ffc107",borderRadius:12,padding:16,marginBottom:20}}>
+            <div style={{fontSize:15,fontWeight:"bold",marginBottom:4}}>⚠️ Set your PIN first!</div>
+            <div style={{fontSize:13,color:"#856404"}}>Before adding to your home screen, please set a recovery PIN in Settings. Without it, you may lose your progress if you ever delete the icon.</div>
+          </div>
+        )}
+
+        {/* iOS Guide */}
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:12}}>
+          <div style={{fontSize:16,fontWeight:"bold",marginBottom:12}}>🍎 iPhone / iPad</div>
+          {[
+            {n:1, text:"Open this game in Safari (not Chrome)"},
+            {n:2, text:'Tap the Share button at the bottom of the screen (the box with an arrow pointing up)'},
+            {n:3, text:'Scroll down and tap "Add to Home Screen"'},
+            {n:4, text:'Tap "Add" in the top right corner'},
+            {n:5, text:"The game icon will appear on your home screen"},
+          ].map(({n,text})=>(
+            <div key={n} style={{display:"flex",gap:12,marginBottom:10,alignItems:"flex-start"}}>
+              <div style={{
+                width:24,height:24,borderRadius:"50%",background:C.text,color:C.bg,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:12,fontWeight:"bold",flexShrink:0,marginTop:1,
+              }}>{n}</div>
+              <div style={{fontSize:14,color:C.textMid,lineHeight:1.5}}>{text}</div>
+            </div>
+          ))}
+          <div style={{fontSize:12,color:C.textLight,marginTop:8,fontStyle:"italic",borderTop:`1px solid ${C.border}`,paddingTop:8}}>
+            Note: Push notifications require iOS 16.4 or later and must be enabled after adding to home screen.
+          </div>
+        </div>
+
+        {/* Android Guide */}
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:12}}>
+          <div style={{fontSize:16,fontWeight:"bold",marginBottom:12}}>🤖 Android</div>
+          {[
+            {n:1, text:"Open this game in Chrome"},
+            {n:2, text:'Tap the three dots menu in the top right'},
+            {n:3, text:'Tap "Add to Home screen"'},
+            {n:4, text:'Tap "Add" to confirm'},
+            {n:5, text:"The game icon will appear on your home screen"},
+          ].map(({n,text})=>(
+            <div key={n} style={{display:"flex",gap:12,marginBottom:10,alignItems:"flex-start"}}>
+              <div style={{
+                width:24,height:24,borderRadius:"50%",background:C.text,color:C.bg,
+                display:"flex",alignItems:"center",justifyContent:"center",
+                fontSize:12,fontWeight:"bold",flexShrink:0,marginTop:1,
+              }}>{n}</div>
+              <div style={{fontSize:14,color:C.textMid,lineHeight:1.5}}>{text}</div>
+            </div>
+          ))}
+          <div style={{fontSize:12,color:C.textLight,marginTop:8,fontStyle:"italic",borderTop:`1px solid ${C.border}`,paddingTop:8}}>
+            Note: Push notifications work automatically on Android without any extra steps.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SETTINGS SCREEN ─────────────────────────────────────────────────────────
+function SettingsScreen({ username, currentLevel, onClose, onResetProgress, onSetPin, onInstallGuide }) {
+  const [confirmReset, setConfirmReset] = useState(false);
+  const hasPins = !!localStorage.getItem("cw_pin_set");
+
+  return (
+    <div style={{minHeight:"100vh",background:C.bg,fontFamily:"Georgia,serif",color:C.text,overflowY:"auto"}}>
+      <div style={{maxWidth:480,margin:"0 auto",padding:"24px 16px 60px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12,marginBottom:24}}>
+          <button onClick={onClose} style={{background:"none",border:"none",fontSize:22,cursor:"pointer",color:C.text}}>←</button>
+          <div style={{fontSize:22,fontWeight:"bold"}}>Settings</div>
+        </div>
+
+        {/* Account */}
+        <div style={{fontSize:11,letterSpacing:"0.2em",color:C.textLight,textTransform:"uppercase",marginBottom:8}}>Account</div>
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:20,overflow:"hidden"}}>
+          <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:12,color:C.textLight}}>Signed in as</div>
+            <div style={{fontSize:16,fontWeight:"bold"}}>{username}</div>
+          </div>
+          <button onClick={onSetPin} style={{
+            width:"100%",background:"none",border:"none",padding:"14px 16px",
+            color:C.text,textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",
+            fontSize:15,borderBottom:`1px solid ${C.border}`,
+          }}>
+            🔐 {hasPins ? "Change recovery PIN" : "Set recovery PIN"}
+            {!hasPins && <span style={{fontSize:11,color:"#c0392b",marginLeft:8,fontWeight:"bold"}}>Recommended</span>}
+          </button>
+          <button onClick={onInstallGuide} style={{
+            width:"100%",background:"none",border:"none",padding:"14px 16px",
+            color:C.text,textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",fontSize:15,
+          }}>📱 Add to Home Screen</button>
+        </div>
+
+        {/* Progress */}
+        <div style={{fontSize:11,letterSpacing:"0.2em",color:C.textLight,textTransform:"uppercase",marginBottom:8}}>Progress</div>
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,marginBottom:20,overflow:"hidden"}}>
+          <div style={{padding:"14px 16px",borderBottom:`1px solid ${C.border}`}}>
+            <div style={{fontSize:12,color:C.textLight}}>Current level</div>
+            <div style={{fontSize:16,fontWeight:"bold"}}>{currentLevel} of 500</div>
+          </div>
+          {currentLevel > 1 && !confirmReset && (
+            <button onClick={()=>setConfirmReset(true)} style={{
+              width:"100%",background:"none",border:"none",padding:"14px 16px",
+              color:"#c0392b",textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",fontSize:15,
+            }}>↩ Reset progress to Level 1</button>
+          )}
+          {confirmReset && (
+            <div style={{padding:"14px 16px"}}>
+              <div style={{fontSize:14,color:C.textMid,marginBottom:12}}>Are you sure? This cannot be undone.</div>
+              <div style={{display:"flex",gap:8}}>
+                <button onClick={()=>setConfirmReset(false)} style={{
+                  flex:1,background:"none",border:`1px solid ${C.border}`,borderRadius:8,
+                  padding:"10px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",color:C.textMid,
+                }}>Cancel</button>
+                <button onClick={()=>{ onResetProgress(); onClose(); }} style={{
+                  flex:1,background:"#c0392b",border:"none",borderRadius:8,
+                  padding:"10px",fontSize:13,fontWeight:"bold",cursor:"pointer",
+                  fontFamily:"Georgia,serif",color:"white",
+                }}>Reset</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* About */}
+        <div style={{fontSize:11,letterSpacing:"0.2em",color:C.textLight,textTransform:"uppercase",marginBottom:8}}>About</div>
+        <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
+          <div style={{fontSize:14,color:C.textMid,lineHeight:1.6}}>
+            CROSSWORDS is a free daily word puzzle game.<br/>
+            500 levels · 365 daily challenges<br/>
+            <span style={{color:C.textLight,fontSize:12}}>crosswordsgame.co.uk</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── HOME SCREEN ─────────────────────────────────────────────────────────────
-function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderboard, onHowToPlay, onResetProgress, onShareDaily, onSetPin, dailyDone }) {
+function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderboard, onHowToPlay, onResetProgress, onShareDaily, onSetPin, onSettings, dailyDone }) {
   const todayKey = getTodayKey();
   const d = new Date();
   const dateStr = d.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long"});
-  const [confirmReset, setConfirmReset] = useState(false);
 
   return (
     <div style={{
       minHeight:"100vh",background:C.bg,fontFamily:"Georgia,serif",color:C.text,
       display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:24,
     }}>
-
-      {/* Reset confirmation modal */}
-      {confirmReset && (
-        <div style={{
-          position:"fixed",inset:0,background:"rgba(0,0,0,0.6)",
-          display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000,padding:24,
-        }}>
-          <div style={{
-            background:C.bg,borderRadius:16,padding:"28px 24px",textAlign:"center",
-            width:"100%",maxWidth:320,border:`2px solid ${C.borderDark}`,
-            boxShadow:"0 20px 60px rgba(0,0,0,0.3)",
-          }}>
-            <div style={{fontSize:32,marginBottom:12}}>↩</div>
-            <div style={{fontSize:18,fontWeight:"bold",marginBottom:8}}>Reset Progress?</div>
-            <div style={{fontSize:14,color:C.textMid,lineHeight:1.5,marginBottom:24}}>
-              This will reset your regular game back to Level 1. Your daily streak and leaderboard scores will not be affected.
-            </div>
-            <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>setConfirmReset(false)} style={{
-                flex:1,background:"none",border:`1px solid ${C.border}`,borderRadius:10,
-                color:C.textMid,padding:"13px",fontSize:14,cursor:"pointer",fontFamily:"Georgia,serif",
-              }}>Cancel</button>
-              <button onClick={()=>{ setConfirmReset(false); onResetProgress(); }} style={{
-                flex:1,background:C.red,border:"none",borderRadius:10,
-                color:"#fff",padding:"13px",fontSize:14,fontWeight:"bold",
-                cursor:"pointer",fontFamily:"Georgia,serif",
-              }}>Reset</button>
-            </div>
-          </div>
-        </div>
-      )}
       <div style={{width:"100%",maxWidth:380}}>
         {/* Masthead */}
         <div style={{borderTop:`3px solid ${C.text}`,borderBottom:`3px solid ${C.text}`,padding:"8px 0",marginBottom:6,textAlign:"center"}}>
@@ -1911,37 +2031,30 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
               <div>
                 <div style={{fontSize:11,letterSpacing:"0.2em",textTransform:"uppercase",color:C.textLight,marginBottom:4}}>Continue</div>
                 <div style={{fontSize:20,fontWeight:"bold"}}>Regular Game</div>
-                <div style={{fontSize:12,color:C.textLight,marginTop:2}}>Level {currentLevel} of 250</div>
+                <div style={{fontSize:12,color:C.textLight,marginTop:2}}>Level {currentLevel} of 500</div>
               </div>
               <div style={{fontSize:32}}>📖</div>
             </div>
           </button>
-          {currentLevel > 1 && (
-            <button onClick={()=>setConfirmReset(true)} style={{
-              width:"100%",background:"none",border:`1px solid ${C.border}`,
-              borderRadius:10,padding:"9px",color:C.textLight,
-              cursor:"pointer",fontFamily:"Georgia,serif",fontSize:12,
-            }}>↩ Reset progress to Level 1</button>
-          )}
-          <button onClick={onSetPin} style={{
-            width:"100%",background:"none",border:`1px solid ${C.border}`,
-            borderRadius:10,padding:"9px",color:C.textLight,
-            cursor:"pointer",fontFamily:"Georgia,serif",fontSize:12,marginTop:6,
-          }}>🔐 {localStorage.getItem("cw_pin_set") ? "Change PIN" : "Set recovery PIN"}</button>
         </div>
 
         {/* Bottom row */}
-        <div style={{display:"flex",gap:10}}>
+        <div style={{display:"flex",gap:8}}>
           <button onClick={onLeaderboard} style={{
             flex:1,background:"none",border:`1px solid ${C.border}`,
-            borderRadius:12,padding:"14px 10px",
-            color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:14,
+            borderRadius:12,padding:"14px 6px",
+            color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:13,
           }}>🏆 Leaderboard</button>
           <button onClick={onHowToPlay} style={{
             flex:1,background:"none",border:`1px solid ${C.border}`,
-            borderRadius:12,padding:"14px 10px",
-            color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:14,
+            borderRadius:12,padding:"14px 6px",
+            color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:13,
           }}>❓ How to Play</button>
+          <button onClick={onSettings} style={{
+            background:"none",border:`1px solid ${C.border}`,
+            borderRadius:12,padding:"14px 16px",
+            color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:18,
+          }}>⚙️</button>
         </div>
       </div>
     </div>
@@ -1954,45 +2067,37 @@ function PushPromptCheck({ username }) {
 
   useEffect(()=>{
     async function check() {
-      // Check if already subscribed in Supabase
+      // Don't show if browser notifications explicitly denied
+      if (typeof Notification !== "undefined" && Notification.permission === "denied") return;
+
+      // Check subscriptions table — if already subscribed don't ask
       try {
         const rows = await dbRequest("GET", `subscriptions?username=eq.${encodeURIComponent(username)}&select=id&limit=1`);
-        if (rows && rows.length > 0) {
-          // Already subscribed — mark as asked and don't show
-          localStorage.setItem("cw_push_asked", "1");
-          return;
-        }
+        if (rows && rows.length > 0) return; // already subscribed
       } catch(e) {}
-      // Also check browser permission
-      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        localStorage.setItem("cw_push_asked", "1");
-        return;
-      }
-      if (typeof Notification !== "undefined" && Notification.permission === "denied") {
-        localStorage.setItem("cw_push_asked", "1");
-        return;
-      }
+
+      // Show the prompt
       setShow(true);
     }
     check();
   }, [username]);
 
   if (!show) return null;
-  return <PushPrompt username={username} />;
+  return <PushPrompt username={username} onDone={()=>setShow(false)}/>;
 }
-function PushPrompt({ username }) {
+function PushPrompt({ username, onDone }) {
   const [state, setState] = useState("idle"); // idle | asking | done
 
   async function handleEnable() {
     setState("asking");
-    localStorage.setItem("cw_push_asked","1");
     const ok = await requestPushPermission(username);
     setState(ok ? "done" : "denied");
+    if (onDone) onDone();
   }
 
   function handleDismiss() {
-    localStorage.setItem("cw_push_asked","1");
     setState("done");
+    if (onDone) onDone();
   }
 
   if (state === "done" || state === "denied") return null;
@@ -2023,7 +2128,11 @@ function PushPrompt({ username }) {
 }
 
 // ─── GAME ────────────────────────────────────────────────────────────────────
-function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBack }) {
+function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBack, blocked }) {
+  // If daily already completed and we're not in won state yet, go back
+  const [hasStarted, setHasStarted] = useState(false);
+  useEffect(()=>{ setHasStarted(true); }, []);
+  if (blocked && !hasStarted) { onBack(); return null; }
   const cellMap = buildCellMap(puzzle);
   const allKeys = Object.keys(cellMap);
   const coords  = allKeys.map(k=>k.split(",").map(Number));
@@ -2380,10 +2489,8 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 <div style={{fontSize:72,fontWeight:"bold",color:C.text,lineHeight:1}}>{result.grade}</div>
                 <div style={{fontSize:22,color:C.text,marginTop:4}}>{result.score}<span style={{fontSize:14,color:C.textLight}}>/100</span></div>
                 <div style={{fontSize:13,color:C.textLight,marginTop:2,fontFamily:"monospace"}}>{fmt(result.seconds)}</div>
-                {/* Push notification opt-in — daily only, shown once */}
-                {isDaily && !localStorage.getItem("cw_push_asked") && (
-                  <PushPromptCheck username={username} />
-                )}
+                {/* Push notification opt-in — daily only */}
+                {isDaily && <PushPromptCheck username={username} />}
                 <div style={{display:"flex",gap:10,marginTop:20}}>
                   <button onClick={()=>setShowShare(true)} style={{
                     flex:1,background:C.card,border:`1px solid ${C.border}`,
@@ -2540,7 +2647,9 @@ export default function Crosswords() {
   }
 
   const [showDailyShare, setShowDailyShare] = useState(false);
-  const [showPinSetup, setShowPinSetup] = useState(false);
+  const [showPinSetup,   setShowPinSetup]   = useState(false);
+  const [showSettings,   setShowSettings]   = useState(false);
+  const [showInstall,    setShowInstall]    = useState(false);
 
   // Show PIN setup for existing users who haven't set one yet
   useEffect(()=>{
@@ -2561,13 +2670,29 @@ export default function Crosswords() {
 
   if (!username) return <UsernameScreen onSet={handleUsernameSet}/>;
 
-  if (screen==="leaderboard") return <Leaderboard onClose={()=>setScreen("home")}/>;
+  if (showSettings) return (
+    <SettingsScreen
+      username={username}
+      currentLevel={currentLevel}
+      onClose={()=>setShowSettings(false)}
+      onResetProgress={handleResetProgress}
+      onSetPin={()=>{ localStorage.removeItem("cw_pin_set"); setShowPinSetup(true); setShowSettings(false); }}
+      onInstallGuide={()=>{ setShowInstall(true); setShowSettings(false); }}
+    />
+  );
+
+  if (showInstall) return (
+    <InstallGuide
+      onClose={()=>setShowInstall(false)}
+      hasPins={!!localStorage.getItem("cw_pin_set")}
+    />
+  );
 
   if (screen==="daily") {
-    // Block if already completed today
-    if (dailyDone) { setScreen("home"); return null; }
     const idx = getDailyIndex();
     const dailyPuzzle = DAILY_PUZZLES[idx];
+    // Block re-entry if already completed — but only before the game starts
+    // Don't redirect mid-game (won state handles its own display)
     return (
       <Game
         username={username}
@@ -2577,6 +2702,7 @@ export default function Crosswords() {
         streak={streak}
         onComplete={handleDailyComplete}
         onBack={()=>setScreen("home")}
+        blocked={dailyDone}
       />
     );
   }
@@ -2616,6 +2742,7 @@ export default function Crosswords() {
         onResetProgress={handleResetProgress}
         onShareDaily={handleShareDaily}
         onSetPin={()=>{ localStorage.removeItem("cw_pin_set"); setShowPinSetup(true); }}
+        onSettings={()=>setShowSettings(true)}
       />
 
       {/* Daily prompt overlay */}

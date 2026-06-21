@@ -1466,7 +1466,7 @@ function Leaderboard({ onClose }) {
                        : fmt(u.avgTime)}
                     </div>
                     <div style={{fontSize:10,color:C.textLight}}>
-                      {tab==="streak"?"dailies":tab==="level"?"reached":tab==="today"?"time":"avg time"}
+                      {tab==="streak"?"streak":tab==="level"?"reached":tab==="today"?"time":"avg time"}
                     </div>
                   </div>
                 </div>

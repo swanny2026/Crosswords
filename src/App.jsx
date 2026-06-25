@@ -1889,7 +1889,7 @@ function InstallGuide({ onClose, hasPins }) {
 }
 
 // ─── SETTINGS SCREEN ─────────────────────────────────────────────────────────
-function SettingsScreen({ username, currentLevel, onClose, onResetProgress, onSetPin, onInstallGuide }) {
+function SettingsScreen({ username, currentLevel, onClose, onResetProgress, onSetPin, onInstallGuide, onLogout }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const hasPins = !!localStorage.getItem("cw_pin_set");
 
@@ -1918,8 +1918,13 @@ function SettingsScreen({ username, currentLevel, onClose, onResetProgress, onSe
           </button>
           <button onClick={onInstallGuide} style={{
             width:"100%",background:"none",border:"none",padding:"14px 16px",
-            color:C.text,textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",fontSize:15,
+            color:C.text,textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",
+            fontSize:15,borderBottom:`1px solid ${C.border}`,
           }}>📱 Add to Home Screen</button>
+          <button onClick={onLogout} style={{
+            width:"100%",background:"none",border:"none",padding:"14px 16px",
+            color:"#c0392b",textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",fontSize:15,
+          }}>🚪 Sign out</button>
         </div>
 
         {/* Progress */}
@@ -2677,7 +2682,21 @@ export default function Crosswords() {
     setShowDailyShare(true);
   }
 
-  function handleResetProgress() {
+  function handleLogout() {
+    // Clear all local data
+    localStorage.removeItem("cw_username");
+    localStorage.removeItem("cw_level");
+    localStorage.removeItem("cw_streak");
+    localStorage.removeItem("cw_last_daily");
+    localStorage.removeItem("cw_daily_done");
+    localStorage.removeItem("cw_daily_result");
+    localStorage.removeItem("cw_device_id");
+    localStorage.removeItem("cw_pin_set");
+    localStorage.removeItem("cw_push_asked");
+    localStorage.removeItem("cw_pb_daily");
+    // Reload to show username screen fresh
+    window.location.reload();
+  }
     setCurrentLevel(1);
     localStorage.setItem("cw_level","1");
   }
@@ -2694,6 +2713,7 @@ export default function Crosswords() {
       onResetProgress={handleResetProgress}
       onSetPin={()=>{ localStorage.removeItem("cw_pin_set"); setShowPinSetup(true); setShowSettings(false); }}
       onInstallGuide={()=>{ setShowInstall(true); setShowSettings(false); }}
+      onLogout={handleLogout}
     />
   );
 

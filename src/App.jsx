@@ -2697,6 +2697,8 @@ export default function Crosswords() {
     // Reload to show username screen fresh
     window.location.reload();
   }
+
+  function handleResetProgress() {
     setCurrentLevel(1);
     localStorage.setItem("cw_level","1");
   }

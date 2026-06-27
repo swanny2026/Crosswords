@@ -1197,6 +1197,73 @@ const C = {
   cellBg:"#e0d5b8", cellFilled:"#f8f2e0", keyDefault:"#d8ceb0",
 };
 
+// ─── ICONS ───────────────────────────────────────────────────────────────────
+// Professional line icons (lucide-style) drawn inline as SVG — no dependencies.
+// Two-tone: monochrome by default, with gold accents on achievement icons.
+function Icon({ name, size=20, color=C.text, accent=C.gold, strokeWidth=2, style }) {
+  const common = {
+    width:size, height:size, viewBox:"0 0 24 24", fill:"none",
+    stroke:color, strokeWidth, strokeLinecap:"round", strokeLinejoin:"round",
+    style:{flexShrink:0, ...style},
+  };
+  switch(name) {
+    case "flame": // streak — red/orange flame
+      return (<svg {...common} stroke="#d4571f"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" fill="#e8541e" fillOpacity="0.18"/></svg>);
+    case "star": // gold accent
+      return (<svg {...common} stroke={accent}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill={accent} fillOpacity="0.15"/></svg>);
+    case "trophy": // gold accent
+      return (<svg {...common} stroke={accent}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" fill={accent} fillOpacity="0.12"/></svg>);
+    case "medal": // gold accent
+      return (<svg {...common} stroke={accent}><path d="M7.21 15 2.66 7.14a2 2 0 0 1 .13-2.2L4.4 2.8A2 2 0 0 1 6 2h12a2 2 0 0 1 1.6.8l1.6 2.14a2 2 0 0 1 .14 2.2L16.79 15"/><path d="M11 12 5.12 2.2"/><path d="m13 12 5.88-9.8"/><path d="M8 7h8"/><circle cx="12" cy="17" r="5" fill={accent} fillOpacity="0.12"/><path d="M12 18v-2h-.5"/></svg>);
+    case "zap": // speed/time — gold accent
+      return (<svg {...common} stroke={accent}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill={accent} fillOpacity="0.15"/></svg>);
+    case "book":
+      return (<svg {...common}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>);
+    case "newspaper":
+      return (<svg {...common}><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>);
+    case "trending": // achievement / level
+      return (<svg {...common}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>);
+    case "settings":
+      return (<svg {...common}><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>);
+    case "help":
+      return (<svg {...common}><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>);
+    case "lock":
+      return (<svg {...common}><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>);
+    case "logout":
+      return (<svg {...common}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>);
+    case "phone":
+      return (<svg {...common}><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>);
+    case "apple":
+      return (<svg {...common}><path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"/><path d="M10 2c1 .5 2 2 2 5"/></svg>);
+    case "android":
+      return (<svg {...common}><path d="M5 16V9a7 7 0 0 1 14 0v7"/><path d="M9 9V6"/><path d="M15 9V6"/><line x1="2" x2="5" y1="16" y2="16"/><line x1="19" x2="22" y1="16" y2="16"/><path d="M5 16h14v2a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3v-2Z"/></svg>);
+    case "check":
+      return (<svg {...common} stroke={C.green}><polyline points="20 6 9 17 4 12"/></svg>);
+    case "x":
+      return (<svg {...common} stroke={C.red}><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>);
+    case "bulb":
+      return (<svg {...common} stroke={accent}><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>);
+    case "stop":
+      return (<svg {...common} stroke={C.red}><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg>);
+    case "undo":
+      return (<svg {...common}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>);
+    case "arrowLeft":
+      return (<svg {...common}><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>);
+    case "party": // completion celebration — gold
+      return (<svg {...common} stroke={accent}><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01"/><path d="M22 8h.01"/><path d="M15 2h.01"/><path d="M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-.82-.33c-.86-.34-1.82.2-1.98 1.11c-.11.7-.72 1.22-1.43 1.22H17"/><path d="m11 2 .33.82c.34.86-.2 1.82-1.11 1.98C9.52 4.9 9 5.52 9 6.23V7"/><path d="M11 13c1.93 1.93 2.83 4.17 2 5-.83.83-3.07-.07-5-2-1.93-1.93-2.83-4.17-2-5 .83-.83 3.07.07 5 2Z" fill={accent} fillOpacity="0.12"/></svg>);
+    case "sparkle":
+      return (<svg {...common} stroke={accent}><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3L12 3Z" fill={accent} fillOpacity="0.12"/></svg>);
+    case "hundred": // legend milestone
+      return (<svg {...common} stroke={accent}><circle cx="12" cy="12" r="10"/><path d="M8 8v8M16 8v8M8 12h8" strokeWidth="1.5"/></svg>);
+    case "share":
+      return (<svg {...common}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" x2="12" y1="2" y2="15"/></svg>);
+    case "clock":
+      return (<svg {...common}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>);
+    default:
+      return null;
+  }
+}
+
 // ─── CONFETTI ────────────────────────────────────────────────────────────────
 function Confetti({ active }) {
   if (!active) return null;
@@ -1220,7 +1287,7 @@ function Confetti({ active }) {
 }
 
 // ─── BURST ───────────────────────────────────────────────────────────────────
-function Burst({ show, emoji, headline, sub, bg }) {
+function Burst({ show, emoji, icon, headline, sub, bg }) {
   return (
     <div style={{
       position:"fixed",inset:0,display:"flex",alignItems:"center",justifyContent:"center",
@@ -1233,7 +1300,9 @@ function Burst({ show, emoji, headline, sub, bg }) {
         textAlign:"center",boxShadow:"0 20px 60px rgba(0,0,0,0.18)",
         border:`1.5px solid ${C.borderDark}`,
       }}>
-        <div style={{fontSize:48,lineHeight:1,marginBottom:6}}>{emoji}</div>
+        <div style={{lineHeight:1,marginBottom:6,display:"flex",justifyContent:"center"}}>
+          {icon ? <Icon name={icon} size={48}/> : <span style={{fontSize:48}}>{emoji}</span>}
+        </div>
         <div style={{fontSize:24,fontWeight:"bold",color:C.text,marginBottom:3}}>{headline}</div>
         {sub&&<div style={{fontSize:14,color:C.textMid,fontStyle:"italic"}}>{sub}</div>}
       </div>
@@ -1323,7 +1392,8 @@ function ShareCard({ username, mode, level, score, grade, seconds, streak, puzzl
           marginTop:24,background:C.text,border:"none",borderRadius:10,
           color:C.bg,padding:"12px 32px",fontSize:15,fontWeight:"bold",
           cursor:"pointer",width:"100%",fontFamily:"Georgia,serif",
-        }}>Share 📤</button>
+          display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+        }}><Icon name="share" size={17} color={C.bg}/> Share</button>
         <button onClick={onClose} style={{
           marginTop:8,background:"none",border:`1px solid ${C.border}`,
           borderRadius:10,color:C.textMid,padding:"10px 32px",
@@ -1408,13 +1478,17 @@ function Leaderboard({ onClose }) {
 
         {/* Tabs */}
         <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6,marginBottom:16}}>
-          {[["streak","🔥 Daily Streak"],["level","📖 Level"],["speed","⚡ Avg Time"],["today","📰 Today"]].map(([key,label])=>(
+          {[["streak","flame","Daily Streak"],["level","trending","Level"],["speed","zap","Avg Time"],["today","newspaper","Today"]].map(([key,icon,label])=>(
             <button key={key} onClick={()=>setTab(key)} style={{
               padding:"9px 4px",borderRadius:8,fontSize:12,fontWeight:"bold",
               background:tab===key?C.text:C.card,
               color:tab===key?C.bg:C.textMid,
               border:`1px solid ${C.border}`,cursor:"pointer",fontFamily:"Georgia,serif",
-            }}>{label}</button>
+              display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+            }}>
+              <Icon name={icon} size={15} color={tab===key?C.bg:C.textMid} accent={tab===key?C.bg:C.gold}/>
+              {label}
+            </button>
           ))}
         </div>
 
@@ -1458,15 +1532,12 @@ function Leaderboard({ onClose }) {
                       {tab==="today"  && ""}
                     </div>
                   </div>
-                  <div style={{textAlign:"right",flexShrink:0}}>
-                    <div style={{fontWeight:"bold",fontSize:18,color:C.text}}>
-                      {tab==="streak" ? `${u.streak}🔥`
+                  <div style={{textAlign:"right",flexShrink:0,display:"flex",alignItems:"center",gap:4}}>
+                    <div style={{fontWeight:"bold",fontSize:18,color:C.text,display:"flex",alignItems:"center",gap:4}}>
+                      {tab==="streak" ? <>{u.streak}<Icon name="flame" size={17}/></>
                        : tab==="level"  ? `Lvl ${u.maxLevel}`
                        : tab==="today"  ? fmt(u.seconds)
                        : fmt(u.avgTime)}
-                    </div>
-                    <div style={{fontSize:10,color:C.textLight}}>
-                      {tab==="streak"?"streak":tab==="level"?"reached":tab==="today"?"time":"avg time"}
                     </div>
                   </div>
                 </div>
@@ -1482,14 +1553,14 @@ function Leaderboard({ onClose }) {
 // ─── HOW TO PLAY MODAL ───────────────────────────────────────────────────────
 function HowToPlay({ onClose }) {
   const steps = [
-    { emoji:"🗞", title:"What is Crosswords?", body:"A daily word puzzle game. Letters hide inside a crossword grid — your job is to reveal them all by guessing letters one at a time." },
-    { emoji:"⌨️", title:"Tap to guess", body:"Tap a letter on the keyboard to select it (it highlights). Tap it again to confirm your guess. Changed your mind? Tap ✕ to deselect." },
-    { emoji:"✅", title:"Correct letters", body:"If the letter appears in the grid, all matching cells light up instantly — for free! Completing a word gives you +2 bonus letter guesses." },
-    { emoji:"❌", title:"Wrong letters", body:"If the letter is not in the grid, you lose one guess. You start with 5 guesses — use them wisely!" },
-    { emoji:"⚡", title:"Cascade effect", body:"Revealing a word can uncover letters shared with other words, triggering a chain reaction. Smart guesses go further!" },
-    { emoji:"⏱", title:"Your time", body:"How fast can you solve it? Your completion time is recorded and shown on the leaderboard. The faster the better!" },
-    { emoji:"📰", title:"Daily Challenge", body:"A harder puzzle drops every day. Complete it to build your 🔥 streak. Miss a day and it resets — so come back daily!" },
-    { emoji:"🏆", title:"Leaderboard", body:"Compete with other players. Compare daily streaks, level progress and fastest completion times." },
+    { icon:"newspaper", title:"What is Crosswords?", body:"A daily word puzzle game. Letters hide inside a crossword grid — your job is to reveal them all by guessing letters one at a time." },
+    { icon:"check", title:"Tap to guess", body:"Tap a letter on the keyboard to select it (it highlights). Tap it again to confirm your guess. Changed your mind? Tap to deselect." },
+    { icon:"sparkle", title:"Correct letters", body:"If the letter appears in the grid, all matching cells light up instantly — for free! Completing a word gives you +2 bonus letter guesses." },
+    { icon:"x", title:"Wrong letters", body:"If the letter is not in the grid, you lose one guess. You start with 5 guesses — use them wisely!" },
+    { icon:"zap", title:"Cascade effect", body:"Revealing a word can uncover letters shared with other words, triggering a chain reaction. Smart guesses go further!" },
+    { icon:"zap", title:"Your time", body:"How fast can you solve it? Your completion time is recorded and shown on the leaderboard. The faster the better!" },
+    { icon:"newspaper", title:"Daily Challenge", body:"A harder puzzle drops every day. Complete it to build your streak. Miss a day and it resets — so come back daily!" },
+    { icon:"trophy", title:"Leaderboard", body:"Compete with other players. Compare daily streaks, level progress and fastest completion times." },
   ];
 
   return (
@@ -1513,7 +1584,9 @@ function HowToPlay({ onClose }) {
         <div style={{display:"flex",flexDirection:"column",gap:16,marginBottom:24}}>
           {steps.map((s,i)=>(
             <div key={i} style={{display:"flex",gap:14,alignItems:"flex-start"}}>
-              <div style={{fontSize:26,lineHeight:1,flexShrink:0,marginTop:2}}>{s.emoji}</div>
+              <div style={{flexShrink:0,marginTop:2,width:26,display:"flex",justifyContent:"center"}}>
+                <Icon name={s.icon} size={22} color={C.text}/>
+              </div>
               <div>
                 <div style={{fontWeight:"bold",fontSize:14,color:C.text,marginBottom:3}}>{s.title}</div>
                 <div style={{fontSize:13,color:C.textMid,lineHeight:1.5}}>{s.body}</div>
@@ -1629,9 +1702,9 @@ function UsernameScreen({ onSet }) {
           A crossword puzzle game where you reveal hidden words by guessing letters — one tap at a time.
         </div>
         <div style={{display:"flex",gap:16,fontSize:12,color:C.textLight}}>
-          <span>📖 500 levels</span>
-          <span>📰 Daily challenge</span>
-          <span>🏆 Leaderboard</span>
+          <span style={{display:"inline-flex",alignItems:"center",gap:4}}><Icon name="book" size={14} color={C.textLight}/> 500 levels</span>
+          <span style={{display:"inline-flex",alignItems:"center",gap:4}}><Icon name="newspaper" size={14} color={C.textLight}/> Daily challenge</span>
+          <span style={{display:"inline-flex",alignItems:"center",gap:4}}><Icon name="trophy" size={14} color={C.textLight} accent={C.textLight}/> Leaderboard</span>
         </div>
       </div>
 
@@ -1719,7 +1792,8 @@ function UsernameScreen({ onSet }) {
           <button onClick={()=>setShowHow(true)} style={{
             width:"100%",background:"none",border:`1px solid ${C.border}`,borderRadius:10,
             color:C.textMid,padding:"11px",fontSize:13,cursor:"pointer",fontFamily:"Georgia,serif",
-          }}>❓ How to Play</button>
+            display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+          }}><Icon name="help" size={15} color={C.textMid}/> How to Play</button>
         </>)}
       </div>
     </div>
@@ -1752,7 +1826,7 @@ function PinSetup({ username, onDone }) {
         background:C.bg,borderRadius:20,padding:28,width:"100%",maxWidth:340,
         border:`2px solid ${C.borderDark}`,textAlign:"center",
       }}>
-        <div style={{fontSize:28,marginBottom:8}}>🔐</div>
+        <div style={{marginBottom:8,display:"flex",justifyContent:"center"}}><Icon name="lock" size={28} color={C.text}/></div>
         <div style={{fontSize:18,fontWeight:"bold",marginBottom:6}}>Set a recovery PIN</div>
         <div style={{fontSize:13,color:C.textMid,marginBottom:20}}>
           Choose a 4-digit PIN to protect your progress. If you ever lose access you can use it to recover your account.
@@ -1813,7 +1887,7 @@ function InstallGuide({ onClose, hasPins }) {
 
         {!hasPins ? (
           <div style={{background:"#c0392b",borderRadius:12,padding:16,marginBottom:20,textAlign:"center"}}>
-            <div style={{fontSize:18,marginBottom:6}}>🛑 Stop — do this first!</div>
+            <div style={{fontSize:18,marginBottom:6,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><Icon name="stop" size={22} color="#fff"/> Stop — do this first!</div>
             <div style={{fontSize:14,fontWeight:"bold",color:"white",marginBottom:8}}>
               You must set a recovery PIN before adding to your home screen.
             </div>
@@ -1828,7 +1902,7 @@ function InstallGuide({ onClose, hasPins }) {
           </div>
         ) : (
           <div style={{background:"#27ae60",borderRadius:12,padding:14,marginBottom:20,display:"flex",gap:10,alignItems:"center"}}>
-            <div style={{fontSize:22}}>✅</div>
+            <div><Icon name="check" size={22} color="#fff"/></div>
             <div style={{fontSize:14,color:"white",lineHeight:1.4}}>
               <strong>PIN is set — you're good to go!</strong><br/>
               Your progress is protected. If you ever lose access, sign in with your username and PIN to restore everything.
@@ -1838,7 +1912,7 @@ function InstallGuide({ onClose, hasPins }) {
 
         {/* iOS Guide */}
         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:12}}>
-          <div style={{fontSize:16,fontWeight:"bold",marginBottom:12}}>🍎 iPhone / iPad</div>
+          <div style={{fontSize:16,fontWeight:"bold",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><Icon name="apple" size={18} color={C.text}/> iPhone / iPad</div>
           {[
             {n:1, text:"Open this game in Safari (not Chrome)"},
             {n:2, text:'Tap the Share button at the bottom of the screen (the box with an arrow pointing up)'},
@@ -1862,7 +1936,7 @@ function InstallGuide({ onClose, hasPins }) {
 
         {/* Android Guide */}
         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:12}}>
-          <div style={{fontSize:16,fontWeight:"bold",marginBottom:12}}>🤖 Android</div>
+          <div style={{fontSize:16,fontWeight:"bold",marginBottom:12,display:"flex",alignItems:"center",gap:8}}><Icon name="android" size={18} color={C.text}/> Android</div>
           {[
             {n:1, text:"Open this game in Chrome"},
             {n:2, text:'Tap the three dots menu in the top right'},
@@ -1912,19 +1986,23 @@ function SettingsScreen({ username, currentLevel, onClose, onResetProgress, onSe
             width:"100%",background:"none",border:"none",padding:"14px 16px",
             color:C.text,textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",
             fontSize:15,borderBottom:`1px solid ${C.border}`,
+            display:"flex",alignItems:"center",gap:10,
           }}>
-            🔐 {hasPins ? "Change recovery PIN" : "Set recovery PIN"}
-            {!hasPins && <span style={{fontSize:11,color:"#c0392b",marginLeft:8,fontWeight:"bold"}}>Recommended</span>}
+            <Icon name="lock" size={17} color={C.text}/>
+            <span>{hasPins ? "Change recovery PIN" : "Set recovery PIN"}
+            {!hasPins && <span style={{fontSize:11,color:"#c0392b",marginLeft:8,fontWeight:"bold"}}>Recommended</span>}</span>
           </button>
           <button onClick={onInstallGuide} style={{
             width:"100%",background:"none",border:"none",padding:"14px 16px",
             color:C.text,textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",
             fontSize:15,borderBottom:`1px solid ${C.border}`,
-          }}>📱 Add to Home Screen</button>
+            display:"flex",alignItems:"center",gap:10,
+          }}><Icon name="phone" size={17} color={C.text}/> Add to Home Screen</button>
           <button onClick={onLogout} style={{
             width:"100%",background:"none",border:"none",padding:"14px 16px",
             color:"#c0392b",textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",fontSize:15,
-          }}>🚪 Sign out</button>
+            display:"flex",alignItems:"center",gap:10,
+          }}><Icon name="logout" size={17} color="#c0392b"/> Sign out</button>
         </div>
 
         {/* Progress */}
@@ -1938,7 +2016,8 @@ function SettingsScreen({ username, currentLevel, onClose, onResetProgress, onSe
             <button onClick={()=>setConfirmReset(true)} style={{
               width:"100%",background:"none",border:"none",padding:"14px 16px",
               color:"#c0392b",textAlign:"left",cursor:"pointer",fontFamily:"Georgia,serif",fontSize:15,
-            }}>↩ Reset progress to Level 1</button>
+              display:"flex",alignItems:"center",gap:10,
+            }}><Icon name="undo" size={17} color="#c0392b"/> Reset progress to Level 1</button>
           )}
           {confirmReset && (
             <div style={{padding:"14px 16px"}}>
@@ -1995,7 +2074,7 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:16,marginBottom:16,textAlign:"center"}}>
           <div style={{fontSize:13,color:C.textLight}}>Welcome back</div>
           <div style={{fontSize:20,fontWeight:"bold"}}>{username}</div>
-          {streak>0&&<div style={{fontSize:14,color:C.gold,marginTop:4}}>🔥 {streak} day streak</div>}
+          {streak>0&&<div style={{fontSize:14,color:C.gold,marginTop:4,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><Icon name="flame" size={15}/> {streak} day streak</div>}
           <div style={{fontSize:13,color:C.textLight,marginTop:4}}>Level {currentLevel} / 500</div>
           {(()=>{
             const pbDaily = localStorage.getItem("cw_pb_daily");
@@ -2004,7 +2083,7 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
             return (
               <div style={{marginTop:10,paddingTop:10,borderTop:`1px solid ${C.border}`,textAlign:"center"}}>
                 <div style={{fontSize:11,color:C.textLight,textTransform:"uppercase",letterSpacing:"0.1em"}}>Daily Challenge PB</div>
-                <div style={{fontSize:16,fontWeight:"bold",color:C.gold}}>⚡ {fmt(parseInt(pbDaily))}</div>
+                <div style={{fontSize:16,fontWeight:"bold",color:C.gold,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><Icon name="zap" size={15}/> {fmt(parseInt(pbDaily))}</div>
               </div>
             );
           })()}
@@ -2028,7 +2107,7 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
               <div style={{fontSize:20,fontWeight:"bold"}}>Daily Challenge</div>
               <div style={{fontSize:12,opacity:0.7,marginTop:2}}>{dateStr}</div>
             </div>
-            <div style={{fontSize:32}}>📰</div>
+            <Icon name="newspaper" size={32} color={dailyDone?C.textMid:C.bg}/>
           </div>
         </button>
         {dailyDone && (
@@ -2037,7 +2116,8 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
             borderRadius:10,padding:"9px",color:C.textMid,
             cursor:"pointer",fontFamily:"Georgia,serif",fontSize:13,
             marginBottom:12,
-          }}>📤 Share your result</button>
+            display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+          }}><Icon name="share" size={15} color={C.textMid}/> Share your result</button>
         )}
 
         {/* Regular Game */}
@@ -2053,7 +2133,7 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
                 <div style={{fontSize:20,fontWeight:"bold"}}>Regular Game</div>
                 <div style={{fontSize:12,color:C.textLight,marginTop:2}}>Level {currentLevel} of 500</div>
               </div>
-              <div style={{fontSize:32}}>📖</div>
+              <Icon name="book" size={32} color={C.text}/>
             </div>
           </button>
         </div>
@@ -2064,17 +2144,20 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
             flex:1,background:"none",border:`1px solid ${C.border}`,
             borderRadius:12,padding:"14px 6px",
             color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:13,
-          }}>🏆 Leaderboard</button>
+            display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+          }}><Icon name="trophy" size={16}/> Leaderboard</button>
           <button onClick={onHowToPlay} style={{
             flex:1,background:"none",border:`1px solid ${C.border}`,
             borderRadius:12,padding:"14px 6px",
             color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:13,
-          }}>❓ How to Play</button>
+            display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+          }}><Icon name="help" size={16} color={C.textMid}/> How to Play</button>
           <button onClick={onSettings} style={{
             background:"none",border:`1px solid ${C.border}`,
             borderRadius:12,padding:"14px 16px",
             color:C.textMid,cursor:"pointer",fontFamily:"Georgia,serif",fontSize:18,
-          }}>⚙️</button>
+            display:"flex",alignItems:"center",justifyContent:"center",
+          }}><Icon name="settings" size={18} color={C.textMid}/></button>
         </div>
       </div>
     </div>
@@ -2186,8 +2269,11 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
 
   const showToast=(msg,type="info")=>{ setToast({msg,type}); setTimeout(()=>setToast(null),2200); };
 
-  const showBurst=useCallback((emoji,headline,sub,bg,withConfetti=false)=>{
-    setBurst({emoji,headline,sub,bg});
+  const showBurst=useCallback((iconOrEmoji,headline,sub,bg,withConfetti=false)=>{
+    // If it's a known icon name use icon, otherwise treat as emoji
+    const knownIcons=["star","trophy","flame","zap","sparkle","party","hundred","medal","check"];
+    const isIcon=knownIcons.includes(iconOrEmoji);
+    setBurst({icon:isIcon?iconOrEmoji:null,emoji:isIcon?null:iconOrEmoji,headline,sub,bg});
     if (withConfetti){ setConfetti(true); setTimeout(()=>setConfetti(false),2000); }
     setTimeout(()=>setBurst(null),1600);
   },[]);
@@ -2223,9 +2309,9 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
       // Bigger celebration for perfect game
       setConfetti(true);
       setTimeout(()=>setConfetti(false), 4000);
-      setTimeout(()=>showBurst("⭐","Perfect!","No wrong guesses!",C.goldLt,false),300);
+      setTimeout(()=>showBurst("star","Perfect!","No wrong guesses!",C.goldLt,false),300);
     } else {
-      setTimeout(()=>showBurst("🏆","Complete!",`${score}/100 — Grade ${grade}`,mode==="daily"?C.goldLt:C.greenLt,true),300);
+      setTimeout(()=>showBurst("trophy","Complete!",isDaily?"Daily challenge done!":"Level complete!",mode==="daily"?C.goldLt:C.greenLt,true),300);
     }
   },[puzzle.words.length,revealAll,seconds,username,mode,level,streak,isPerfect,hintUsed,onComplete,showBurst]);
 
@@ -2254,11 +2340,11 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
         const bonus=completed.length*2;
         setLetterLeft(n=>n+bonus);
         const isLast=newGuessed.size===puzzle.words.length;
-        if (!isLast) showBurst("🎉",`${completed.map(w=>w.word).join(" & ")}!`,`+${bonus} guesses`,C.greenLt,true);
-        setTimeout(()=>checkWin(newGuessed),isLast?0:500);
-      } else {
-        showBurst("✨",`${letter}!`,`${hits.length} cell${hits.length>1?"s":""} revealed`,C.accentLt);
+        // Subtle toast instead of full-screen burst — doesn't cover the board
+        if (!isLast) showToast(`${completed.map(w=>w.word).join(" & ")} solved · +${bonus} guesses`,"good");
+        setTimeout(()=>checkWin(newGuessed),isLast?0:300);
       }
+      // No popup for single correct letters — the cell animation is enough feedback
     } else {
       setWrongLetters(prev=>new Set([...prev,letter]));
       setIsPerfect(false);
@@ -2312,7 +2398,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
               CROSSWORDS
             </div>
           </div>
-          {isDaily&&<div style={{fontSize:14,color:C.gold}}>🔥{streak}</div>}
+          {isDaily&&<div style={{fontSize:14,color:C.gold,display:"flex",alignItems:"center",gap:2}}><Icon name="flame" size={14}/>{streak}</div>}
           {!isDaily&&<div style={{width:32}}/>}
         </div>
 
@@ -2333,7 +2419,7 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
         {/* Toast */}
         <div style={{
           height:22,textAlign:"center",fontSize:13,fontStyle:"italic",
-          color:toast?.type==="bad"?C.red:C.textMid,
+          color:toast?.type==="bad"?C.red:toast?.type==="good"?C.green:C.textMid,
           opacity:toast?1:0,transition:"opacity 0.2s",marginBottom:10,
           animation:toast?.type==="bad"?"badShake 0.35s ease":"none",
         }}>{toast?.msg}</div>
@@ -2452,13 +2538,14 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 setLetterLeft(n=>n+bonus);
                 setTimeout(()=>checkWin(newGuessed),500);
               } else {
-                showBurst("💡",`${hintLetter} revealed!`,"Free hint used",C.goldLt);
+                showToast(`${hintLetter} revealed — free hint used`,"good");
               }
             }} style={{
               background:C.goldLt,border:`1px solid ${C.gold}`,borderRadius:10,
               padding:"10px 24px",color:C.text,fontSize:14,fontWeight:"bold",
               cursor:"pointer",fontFamily:"Georgia,serif",
-            }}>💡 Reveal a letter (last chance!)</button>
+              display:"inline-flex",alignItems:"center",gap:6,
+            }}><Icon name="bulb" size={16}/> Reveal a letter (last chance!)</button>
           </div>
         )}
         {gameState!=="playing"&&(
@@ -2475,8 +2562,8 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 </div>
                 {result?.perfect && (
                   <div style={{fontSize:13,color:C.gold,fontWeight:"bold",marginBottom:6,
-                    background:C.goldLt,borderRadius:8,padding:"4px 12px",display:"inline-block"}}>
-                    ⭐ Perfect — no wrong guesses!
+                    background:C.goldLt,borderRadius:8,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6}}>
+                    <Icon name="star" size={15}/> Perfect — no wrong guesses!
                   </div>
                 )}
                 {isDaily && (()=>{
@@ -2484,17 +2571,17 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                   const isNewPB = result && result.seconds <= prev;
                   return isNewPB ? (
                     <div style={{fontSize:13,color:"#2a9d8f",fontWeight:"bold",marginBottom:6,
-                      background:"#e8f8f5",borderRadius:8,padding:"4px 12px",display:"inline-block"}}>
-                      ⚡ New personal best!
+                      background:"#e8f8f5",borderRadius:8,padding:"4px 12px",display:"inline-flex",alignItems:"center",gap:6}}>
+                      <Icon name="zap" size={15} accent="#2a9d8f"/> New personal best!
                     </div>
                   ) : null;
                 })()}
                 {isDaily&&(result?.streak||streak)>0&&(
-                  <div style={{fontSize:16,color:C.gold,fontWeight:"bold",marginBottom:4}}>
-                    🔥 {result?.streak||streak} day streak
-                    {(result?.streak||streak)>=100&&<span style={{marginLeft:8,fontSize:12,background:C.gold,color:C.bg,borderRadius:6,padding:"2px 8px"}}>💯 Legend</span>}
-                    {(result?.streak||streak)>=30&&(result?.streak||streak)<100&&<span style={{marginLeft:8,fontSize:12,background:C.gold,color:C.bg,borderRadius:6,padding:"2px 8px"}}>🏆 30+ days</span>}
-                    {(result?.streak||streak)>=7&&(result?.streak||streak)<30&&<span style={{marginLeft:8,fontSize:12,background:C.gold,color:C.bg,borderRadius:6,padding:"2px 8px"}}>⭐ 7+ days</span>}
+                  <div style={{fontSize:16,color:C.gold,fontWeight:"bold",marginBottom:4,display:"flex",alignItems:"center",justifyContent:"center",gap:6,flexWrap:"wrap"}}>
+                    <span style={{display:"inline-flex",alignItems:"center",gap:4}}><Icon name="flame" size={16}/> {result?.streak||streak} day streak</span>
+                    {(result?.streak||streak)>=100&&<span style={{fontSize:12,background:C.gold,color:C.bg,borderRadius:6,padding:"2px 8px",display:"inline-flex",alignItems:"center",gap:4}}><Icon name="hundred" size={12} color={C.bg} accent={C.bg}/> Legend</span>}
+                    {(result?.streak||streak)>=30&&(result?.streak||streak)<100&&<span style={{fontSize:12,background:C.gold,color:C.bg,borderRadius:6,padding:"2px 8px",display:"inline-flex",alignItems:"center",gap:4}}><Icon name="trophy" size={12} color={C.bg} accent={C.bg}/> 30+ days</span>}
+                    {(result?.streak||streak)>=7&&(result?.streak||streak)<30&&<span style={{fontSize:12,background:C.gold,color:C.bg,borderRadius:6,padding:"2px 8px",display:"inline-flex",alignItems:"center",gap:4}}><Icon name="star" size={12} color={C.bg} accent={C.bg}/> 7+ days</span>}
                   </div>
                 )}
                 {isDaily&&(result?.streak||streak)>=100&&(
@@ -2514,11 +2601,14 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                   <button onClick={()=>setShowShare(true)} style={{
                     flex:1,background:C.card,border:`1px solid ${C.border}`,
                     borderRadius:10,color:C.text,padding:"12px",fontSize:14,fontWeight:"bold",
-                  }}>Share 📤</button>
+                    cursor:"pointer",fontFamily:"Georgia,serif",
+                    display:"flex",alignItems:"center",justifyContent:"center",gap:6,
+                  }}><Icon name="share" size={15} color={C.text}/> Share</button>
                   <button onClick={onBack} style={{
                     flex:1,background:C.card,border:`1px solid ${C.border}`,
                     borderRadius:10,color:C.text,padding:"12px",fontSize:14,fontWeight:"bold",
-                  }}>{isDaily?"Home 🏠":"Home"}</button>
+                    cursor:"pointer",fontFamily:"Georgia,serif",
+                  }}>Home</button>
                 </div>
                 {!isDaily && (
                   <button onClick={()=>{ onNext(); }} style={{
@@ -2793,13 +2883,13 @@ export default function Crosswords() {
             background:C.bg,borderRadius:20,padding:28,textAlign:"center",
             width:"100%",maxWidth:340,border:`2px solid ${C.borderDark}`,
           }}>
-            <div style={{fontSize:36,marginBottom:8}}>📰</div>
+            <div style={{marginBottom:8,display:"flex",justifyContent:"center"}}><Icon name="newspaper" size={36} color={C.text}/></div>
             <div style={{fontSize:11,letterSpacing:"0.2em",color:C.textLight,textTransform:"uppercase",marginBottom:4}}>Ready?</div>
             <div style={{fontSize:22,fontWeight:"bold",marginBottom:8}}>Daily Challenge</div>
             <div style={{fontSize:14,color:C.textMid,marginBottom:24}}>
               A new harder puzzle every day. Complete it to build your streak!
             </div>
-            {streak>0&&<div style={{fontSize:15,color:C.gold,fontWeight:"bold",marginBottom:16}}>🔥 Current streak: {streak} days</div>}
+            {streak>0&&<div style={{fontSize:15,color:C.gold,fontWeight:"bold",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}><Icon name="flame" size={16}/> Current streak: {streak} days</div>}
             <button onClick={()=>{setShowDailyPrompt(false);setScreen("daily");}} style={{
               width:"100%",background:C.text,border:"none",borderRadius:10,
               color:C.bg,padding:"14px",fontSize:16,fontWeight:"bold",

@@ -2042,7 +2042,7 @@ function SettingsScreen({ username, currentLevel, onClose, onResetProgress, onSe
         <div style={{background:C.card,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px"}}>
           <div style={{fontSize:14,color:C.textMid,lineHeight:1.6}}>
             CROSSWORDS is a free daily word puzzle game.<br/>
-            500 levels · 365 daily challenges<br/>
+            500 levels · a new daily challenge every day<br/>
             <span style={{color:C.textLight,fontSize:12}}>crosswordsgame.co.uk</span>
           </div>
         </div>

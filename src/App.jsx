@@ -177,6 +177,10 @@ function setCookie(name, value, days=365*5) {
   document.cookie = `${name}=${value};expires=${expires};path=/;SameSite=Lax`;
 }
 
+function deleteCookie(name) {
+  document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;SameSite=Lax`;
+}
+
 function getDeviceId() {
   // Try cookie first (survives bookmark deletion)
   let id = getCookie("cw_device_id");
@@ -2791,6 +2795,10 @@ export default function Crosswords() {
     localStorage.removeItem("cw_pin_set");
     localStorage.removeItem("cw_push_asked");
     localStorage.removeItem("cw_pb_daily");
+    // Also clear the device ID cookie — otherwise cloud restore logs straight back in
+    deleteCookie("cw_device_id");
+    // Flag so cloud restore is skipped on the next load
+    sessionStorage.setItem("cw_just_logged_out", "1");
     // Reload to show username screen fresh
     window.location.reload();
   }

@@ -2159,6 +2159,13 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
             display:"flex",alignItems:"center",justifyContent:"center",
           }}><Icon name="settings" size={18} color={C.textMid}/></button>
         </div>
+
+        {/* Footer links — also help SEO via internal linking */}
+        <div style={{textAlign:"center",marginTop:24,fontSize:12,color:C.textLight}}>
+          <a href="/about.html" style={{color:C.textLight,textDecoration:"none",borderBottom:`1px solid ${C.border}`,paddingBottom:1}}>About</a>
+          <span style={{margin:"0 10px",opacity:0.5}}>·</span>
+          <a href="/how-to-play.html" style={{color:C.textLight,textDecoration:"none",borderBottom:`1px solid ${C.border}`,paddingBottom:1}}>How to Play</a>
+        </div>
       </div>
     </div>
   );

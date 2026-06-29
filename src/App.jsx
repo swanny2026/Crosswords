@@ -2175,6 +2175,80 @@ function HomeScreen({ username, currentLevel, streak, onPlay, onDaily, onLeaderb
   );
 }
 
+// ─── ENJOYMENT / CHALLENGE-A-FRIEND PROMPT ──────────────────────────────────
+// Shows after a daily win, but only for engaged players and never too often.
+// Two-step: "Enjoying?" → if yes, invite to challenge a friend.
+function shouldShowEnjoymentPrompt() {
+  try {
+    // Must have completed at least 5 puzzles total
+    const totalDone = parseInt(localStorage.getItem("cw_total_completed")||"0");
+    if (totalDone < 5) return false;
+    // Never show if already shared via this prompt
+    if (localStorage.getItem("cw_enjoy_shared")) return false;
+    // Respect cooldown — 21 days since last shown
+    const lastShown = parseInt(localStorage.getItem("cw_enjoy_last")||"0");
+    const days = (Date.now() - lastShown) / (1000*60*60*24);
+    if (lastShown && days < 21) return false;
+    return true;
+  } catch(e) { return false; }
+}
+
+function EnjoymentPrompt({ streak, onShare }) {
+  const [step, setStep] = useState("ask"); // ask | yes | done
+  useEffect(()=>{
+    // Record that we've shown it (starts the 21-day cooldown)
+    try { localStorage.setItem("cw_enjoy_last", String(Date.now())); } catch(e){}
+  },[]);
+
+  if (step==="done") return null;
+
+  if (step==="ask") {
+    return (
+      <div style={{
+        marginTop:16,background:C.card,border:`1px solid ${C.border}`,
+        borderRadius:12,padding:"16px 18px",textAlign:"center",
+      }}>
+        <div style={{fontSize:15,fontWeight:"bold",color:C.text,marginBottom:12}}>Enjoying Crosswords?</div>
+        <div style={{display:"flex",gap:10}}>
+          <button onClick={()=>setStep("yes")} style={{
+            flex:1,background:C.text,border:"none",borderRadius:10,
+            color:C.bg,padding:"11px",fontSize:14,fontWeight:"bold",
+            cursor:"pointer",fontFamily:"Georgia,serif",
+          }}>Yes, love it!</button>
+          <button onClick={()=>setStep("done")} style={{
+            flex:1,background:"none",border:`1px solid ${C.border}`,borderRadius:10,
+            color:C.textMid,padding:"11px",fontSize:14,
+            cursor:"pointer",fontFamily:"Georgia,serif",
+          }}>Not really</button>
+        </div>
+      </div>
+    );
+  }
+
+  // step === "yes" — invite to challenge a friend
+  return (
+    <div style={{
+      marginTop:16,background:C.goldLt,border:`1px solid ${C.gold}`,
+      borderRadius:12,padding:"16px 18px",textAlign:"center",
+    }}>
+      <div style={{fontSize:15,fontWeight:"bold",color:C.text,marginBottom:6}}>Wonderful! Spread the word</div>
+      <div style={{fontSize:13,color:C.textMid,marginBottom:14,lineHeight:1.5}}>
+        Challenge a friend to beat your{streak>0?` ${streak} day`:""} streak — the more the merrier on the leaderboard!
+      </div>
+      <button onClick={()=>{
+        try { localStorage.setItem("cw_enjoy_shared","1"); } catch(e){}
+        setStep("done");
+        onShare();
+      }} style={{
+        width:"100%",background:C.text,border:"none",borderRadius:10,
+        color:C.bg,padding:"12px",fontSize:14,fontWeight:"bold",
+        cursor:"pointer",fontFamily:"Georgia,serif",
+        display:"flex",alignItems:"center",justifyContent:"center",gap:8,
+      }}><Icon name="share" size={16} color={C.bg}/> Challenge a friend</button>
+    </div>
+  );
+}
+
 // ─── PUSH PROMPT CHECK ───────────────────────────────────────────────────────
 function PushPromptCheck({ username }) {
   const [show, setShow] = useState(false);
@@ -2315,6 +2389,11 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
     const res={score,grade,seconds,perfect};
     setResult(res);
     submitScore({username,mode,level,seconds,score,grade,streak,created_at:new Date().toISOString()});
+    // Track total completed puzzles (used for the challenge-a-friend prompt cadence)
+    try {
+      const t = parseInt(localStorage.getItem("cw_total_completed")||"0") + 1;
+      localStorage.setItem("cw_total_completed", String(t));
+    } catch(e){}
     onComplete(res);
     if (perfect) {
       // Bigger celebration for perfect game
@@ -2608,6 +2687,10 @@ function Game({ username, puzzle, mode, level, streak, onComplete, onNext, onBac
                 <div style={{fontSize:12,color:C.textLight,marginTop:4,letterSpacing:"0.1em",textTransform:"uppercase"}}>completion time</div>
                 {/* Push notification opt-in — daily only */}
                 {isDaily && <PushPromptCheck username={username} />}
+                {/* Challenge-a-friend prompt — engaged players only, gentle cadence */}
+                {isDaily && shouldShowEnjoymentPrompt() && (
+                  <EnjoymentPrompt streak={result?.streak||streak} onShare={()=>setShowShare(true)} />
+                )}
                 <div style={{display:"flex",gap:10,marginTop:20}}>
                   <button onClick={()=>setShowShare(true)} style={{
                     flex:1,background:C.card,border:`1px solid ${C.border}`,
@@ -2683,6 +2766,11 @@ export default function Crosswords() {
   // On first load — try to restore/sync progress from cloud via device ID
   useEffect(()=>{
     async function tryCloudRestore() {
+      // If the user just logged out manually, skip auto-restore this once
+      if (sessionStorage.getItem("cw_just_logged_out")) {
+        sessionStorage.removeItem("cw_just_logged_out");
+        return;
+      }
       const deviceId = getDeviceId();
       // Find username by device ID
       const playerRows = await dbRequest("GET", `players?device_id=eq.${encodeURIComponent(deviceId)}&select=username,pin&limit=1`);
